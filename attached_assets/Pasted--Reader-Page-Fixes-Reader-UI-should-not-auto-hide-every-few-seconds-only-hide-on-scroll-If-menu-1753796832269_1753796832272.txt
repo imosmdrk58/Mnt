@@ -1,0 +1,62 @@
+🧭 Reader Page Fixes
+Reader UI should not auto-hide every few seconds; only hide on scroll.
+
+If menu is toggled via click, it should stay visible until the user scrolls again.
+
+Comments section in the reader must be restored under the chapter view.
+
+Like and View counts on chapters must update the total likes/views of the entire series (tracked cumulatively).
+
+Fix Follow/Unfollow toggle so that:
+
+When user follows, the button stays as "Unfollow".
+
+State persists on reload without needing another API call.
+
+🛠️ Creator Dashboard Fixes
+In chapter creation, add ability to reorder chapters via drag-and-drop.
+
+In the Series Overview tab:
+
+Redesign the UI with a clean layout and readable formatting (title, genre, cover, status, synopsis, etc.).
+
+Enable editing chapters via the existing buttons (they don’t work currently).
+
+On creator’s series list, when hovering over a series card, change “Read Now” → “Manage”.
+
+In chapter creation for novels, use a Markdown editor (like react-markdown-editor-lite) instead of image upload.
+
+In the reader, novel chapters should render markdown properly (headings, paragraphs, italics, links, etc.).
+
+👤 Profile + User System Fixes
+User profiles are not updating — fix user data syncing with:
+
+Reading progress (like % of chapter read)
+
+Streaks
+
+Chapters read this week
+
+User routes and references must use usernames, not raw userId.
+
+All places where comments/reviews show userId should correctly display the username.
+
+Routes like /user/:userId should instead be /user/:username, and lookup should use username.
+
+Fix broken "User Not Found" issue when visiting user pages.
+
+📝 Series Page Fixes
+If current user is the author, show an "Edit Series" button next to the title or near the cover.
+
+Remove the mysterious "0" under genre tags.
+
+Ensure share buttons work and generate shareable links.
+
+Chapter items must show:
+
+Proper preview image (first page of the chapter),
+
+Like count, views, release date.
+
+Bookmark/follow buttons must reflect correct state across reloads (no reset).
+

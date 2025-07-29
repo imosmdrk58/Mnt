@@ -513,6 +513,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check bookmark status for a specific series
+  app.get('/api/bookmarks/:seriesId/status', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { seriesId } = req.params;
+      
+      const bookmarks = await storage.getBookmarkedSeries(userId);
+      const isBookmarked = bookmarks.some(series => series.id === seriesId);
+      
+      res.json({ isBookmarked });
+    } catch (error) {
+      console.error("Error checking bookmark status:", error);
+      res.status(500).json({ message: "Failed to check bookmark status" });
+    }
+  });
+
+  // Like/Unlike a chapter
+  app.post('/api/chapters/:chapterId/like', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { chapterId } = req.params;
+      
+      // Check if user already liked this chapter
+      const existingLike = await storage.getUserChapterLike(userId, chapterId);
+      
+      if (existingLike) {
+        // Unlike the chapter
+        await storage.removeLike(existingLike.id);
+        const chapter = await storage.getChapter(chapterId);
+        const updatedLikeCount = Math.max(0, (chapter?.likeCount || 0) - 1);
+        await storage.updateChapter(chapterId, { likeCount: updatedLikeCount });
+        
+        res.json({ isLiked: false, totalLikes: updatedLikeCount });
+      } else {
+        // Like the chapter
+        await storage.addLike(userId, chapterId);
+        const chapter = await storage.getChapter(chapterId);
+        const updatedLikeCount = (chapter?.likeCount || 0) + 1;
+        await storage.updateChapter(chapterId, { likeCount: updatedLikeCount });
+        
+        res.json({ isLiked: true, totalLikes: updatedLikeCount });
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  // Check if user liked a chapter
+  app.get('/api/chapters/:chapterId/like-status', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { chapterId } = req.params;
+      
+      const like = await storage.getUserChapterLike(userId, chapterId);
+      res.json({ isLiked: !!like });
+    } catch (error) {
+      console.error("Error checking like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
+    }
+  });
+
+  // Get chapter comments
+  app.get('/api/chapters/:chapterId/comments', async (req: any, res) => {
+    try {
+      const { chapterId } = req.params;
+      const comments = await storage.getChapterComments(chapterId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Add a comment to a chapter
+  app.post('/api/chapters/:chapterId/comments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { chapterId } = req.params;
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      
+      await storage.addComment(userId, chapterId, content.trim());
+      res.status(201).json({ message: "Comment added successfully" });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
   // Protected reading progress routes (require auth)
   app.put('/api/reading-progress', requireAuth, async (req: any, res) => {
     try {

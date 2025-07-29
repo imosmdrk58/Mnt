@@ -67,6 +67,8 @@ export default function Reader() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [uiToggleManual, setUiToggleManual] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Fetch series data
   const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
@@ -88,16 +90,23 @@ export default function Reader() {
     },
   });
 
-  // Auto-hide UI after 3 seconds of inactivity
+  // Handle scroll-based UI hiding (only hide on scroll, not on timer)
   useEffect(() => {
-    if (!showUI) return;
-    
-    const timer = setTimeout(() => {
-      setShowUI(false);
-    }, 3000);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Only hide UI if manually toggled and user scrolls
+      if (uiToggleManual && Math.abs(currentScrollY - lastScrollY) > 50) {
+        setShowUI(false);
+        setUiToggleManual(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
 
-    return () => clearTimeout(timer);
-  }, [showUI]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY, uiToggleManual]);
 
   // Initialize chapter data and check like status
   useEffect(() => {
@@ -119,9 +128,118 @@ export default function Reader() {
     }
   }, [likeStatus]);
 
-  // Toggle UI visibility
+  // Toggle UI visibility (manual toggle stays visible until scroll)
   const toggleUI = () => {
-    setShowUI(!showUI);
+    const newShowUI = !showUI;
+    setShowUI(newShowUI);
+    if (newShowUI) {
+      // If showing UI manually, mark it as manual toggle
+      setUiToggleManual(true);
+    }
+  };
+
+  // Fetch comments
+  const { data: comments = [], isLoading: commentsLoading } = useQuery({
+    queryKey: [`/api/chapters/${chapterId}/comments`],
+    enabled: !!chapterId,
+  });
+
+  // Check bookmark status
+  const { data: bookmarkStatus } = useQuery({
+    queryKey: [`/api/bookmarks/${seriesId}/status`],
+    enabled: !!seriesId && isAuthenticated,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (bookmarkStatus) {
+      setIsBookmarked(bookmarkStatus.isBookmarked);
+    }
+  }, [bookmarkStatus]);
+
+  // Like chapter mutation
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/chapters/${chapterId}/like`, {});
+    },
+    onSuccess: (result) => {
+      setIsLiked(result.isLiked);
+      setLikeCount(result.totalLikes);
+      
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: [`/api/chapters/${chapterId}/like-status`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/series/${seriesId}`] });
+      
+      toast({
+        title: result.isLiked ? "Chapter liked!" : "Like removed",
+        description: result.isLiked ? "Thanks for the support!" : "Like removed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to like chapter",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bookmark mutation
+  const bookmarkMutation = useMutation({
+    mutationFn: async () => {
+      if (isBookmarked) {
+        return await apiRequest("DELETE", `/api/bookmarks/${seriesId}`, {});
+      } else {
+        return await apiRequest("POST", "/api/bookmarks", { seriesId });
+      }
+    },
+    onSuccess: () => {
+      const newBookmarkState = !isBookmarked;
+      setIsBookmarked(newBookmarkState);
+      
+      queryClient.invalidateQueries({ queryKey: [`/api/bookmarks/${seriesId}/status`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/user/bookmarks`] });
+      
+      toast({
+        title: newBookmarkState ? "Series bookmarked!" : "Bookmark removed",
+        description: newBookmarkState ? "Added to your library" : "Removed from your library",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update bookmark",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return await apiRequest("POST", `/api/chapters/${chapterId}/comments`, { content });
+    },
+    onSuccess: () => {
+      setCommentText("");
+      queryClient.invalidateQueries({ queryKey: [`/api/chapters/${chapterId}/comments`] });
+      
+      toast({
+        title: "Comment posted!",
+        description: "Your comment has been added successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to post comment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddComment = () => {
+    if (!commentText.trim()) return;
+    addCommentMutation.mutate(commentText);
   };
 
   // Only redirect to login for premium content if needed
@@ -134,12 +252,7 @@ export default function Reader() {
     retry: 2,
   });
 
-  // Fetch comments
-  const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
-    queryKey: [`/api/chapters/${chapterId}/comments`],
-    enabled: !!chapterId,
-    retry: 2,
-  });
+
 
   // Update reading progress
   const progressMutation = useMutation({
@@ -164,111 +277,7 @@ export default function Reader() {
     },
   });
 
-  // Comment mutation
-  const commentMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", `/api/chapters/${chapterId}/comments`, {
-        content: commentText,
-      });
-    },
-    onSuccess: () => {
-      setCommentText("");
-      queryClient.invalidateQueries({ queryKey: [`/api/chapters/${chapterId}/comments`] });
-      toast({
-        title: "Comment posted",
-        description: "Your comment has been posted successfully!",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to post comment",
-        variant: "destructive",
-      });
-    },
-  });
 
-  // Like chapter mutation
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      if (isLiked) {
-        await apiRequest("DELETE", `/api/chapters/${chapterId}/like`);
-      } else {
-        await apiRequest("POST", `/api/chapters/${chapterId}/like`);
-      }
-    },
-    onSuccess: () => {
-      const newLiked = !isLiked;
-      setIsLiked(newLiked);
-      setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
-      toast({
-        title: newLiked ? "Chapter liked!" : "Like removed",
-        description: newLiked ? "You liked this chapter" : "Chapter like removed",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Login required",
-          description: "Please log in to like chapters",
-          variant: "destructive",
-        });
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update like",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Bookmark mutation
-  const bookmarkMutation = useMutation({
-    mutationFn: async () => {
-      if (isBookmarked) {
-        await apiRequest("DELETE", `/api/bookmarks/${seriesId}`);
-      } else {
-        await apiRequest("POST", "/api/bookmarks", { seriesId });
-      }
-    },
-    onSuccess: () => {
-      setIsBookmarked(!isBookmarked);
-      toast({
-        title: isBookmarked ? "Removed from library" : "Added to library",
-        description: isBookmarked ? "Series removed from your library" : "Series added to your library",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update bookmark",
-        variant: "destructive",
-      });
-    },
-  });
 
   // Update reading progress when it changes
   useEffect(() => {
@@ -502,8 +511,128 @@ export default function Reader() {
       )}
 
       {/* Reader Content - Full Screen */}
-      <div className={`h-full w-full ${showUI ? 'pt-20' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`min-h-full w-full ${showUI ? 'pt-20' : ''}`} onClick={(e) => e.stopPropagation()}>
         {renderReader()}
+        
+        {/* Comments Section - Always visible below content */}
+        <div className="bg-background border-t border-border">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold flex items-center space-x-2">
+                <MessageCircle className="w-5 h-5" />
+                <span>Comments ({comments.length})</span>
+              </h3>
+              <Button
+                variant="outline"
+                onClick={() => setShowComments(!showComments)}
+              >
+                {showComments ? 'Hide' : 'Show'} Comments
+              </Button>
+            </div>
+
+            {showComments && (
+              <div className="space-y-6">
+                {/* Add Comment Form */}
+                {isAuthenticated ? (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex space-x-4">
+                        <Avatar>
+                          <AvatarFallback>
+                            {user?.username?.[0]?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-3">
+                          <Textarea
+                            placeholder="Share your thoughts about this chapter..."
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            className="min-h-[100px]"
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={handleAddComment}
+                              disabled={!commentText.trim() || addCommentMutation.isPending}
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              {addCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">Join the discussion! Sign in to comment.</p>
+                      <Button onClick={() => navigate('/auth')}>
+                        Sign In to Comment
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Comments List */}
+                <div className="space-y-4">
+                  {commentsLoading ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, index) => (
+                        <Card key={index}>
+                          <CardContent className="p-4">
+                            <div className="flex space-x-4">
+                              <Skeleton className="w-10 h-10 rounded-full" />
+                              <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-3/4" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : comments.length > 0 ? (
+                    comments.map((comment) => (
+                      <Card key={comment.id}>
+                        <CardContent className="p-4">
+                          <div className="flex space-x-4">
+                            <Avatar>
+                              <AvatarFallback>
+                                {comment.user?.username?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">
+                                    {comment.user?.username || 'Anonymous'}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-foreground whitespace-pre-wrap">{comment.content}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No comments yet. Be the first to share your thoughts!</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Floating Navigation - Only for manga/webtoon */}

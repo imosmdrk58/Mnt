@@ -68,7 +68,9 @@ export interface IStorage {
   
   // Comment operations
   getCommentsByChapterId(chapterId: string): Promise<Comment[]>;
+  getChapterComments(chapterId: string): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
+  addComment(userId: string, chapterId: string, content: string): Promise<Comment>;
   
   // Review operations
   getReviewsBySeriesId(seriesId: string): Promise<Review[]>;
@@ -762,6 +764,63 @@ export class DatabaseStorage implements IStorage {
       .where(inArray(series.id, bookmarkedSeriesIds.map(b => b.seriesId)));
   }
 
+  // Like operations
+  async getUserChapterLike(userId: string, chapterId: string): Promise<any> {
+    const [like] = await db
+      .select()
+      .from(chapterLikes)
+      .where(
+        and(
+          eq(chapterLikes.userId, userId),
+          eq(chapterLikes.chapterId, chapterId)
+        )
+      );
+    
+    return like;
+  }
+
+  async addLike(userId: string, chapterId: string): Promise<void> {
+    await db
+      .insert(chapterLikes)
+      .values({ userId, chapterId })
+      .onConflictDoNothing();
+  }
+
+  async removeLike(likeId: string): Promise<void> {
+    await db
+      .delete(chapterLikes)
+      .where(eq(chapterLikes.id, likeId));
+  }
+
+  // Comment operations with proper user joins
+  async getChapterComments(chapterId: string): Promise<Comment[]> {
+    return await db
+      .select({
+        id: comments.id,
+        userId: comments.userId,
+        chapterId: comments.chapterId,
+        content: comments.content,
+        createdAt: comments.createdAt,
+        user: {
+          id: users.id,
+          username: users.username,
+        }
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id))
+      .where(eq(comments.chapterId, chapterId))
+      .orderBy(desc(comments.createdAt));
+  }
+
+  async addComment(userId: string, chapterId: string, content: string): Promise<Comment> {
+    const [newComment] = await db
+      .insert(comments)
+      .values({ userId, chapterId, content })
+      .returning();
+    
+    return newComment;
+  }
+
   // Reading progress operations
   async updateReadingProgress(
     userId: string,
@@ -773,9 +832,8 @@ export class DatabaseStorage implements IStorage {
       .insert(readingProgress)
       .values({ userId, seriesId, chapterId, progress: progressValue.toString() })
       .onConflictDoUpdate({
-        target: [readingProgress.userId, readingProgress.seriesId],
+        target: [readingProgress.userId, readingProgress.seriesId, readingProgress.chapterId],
         set: {
-          chapterId,
           progress: progressValue.toString(),
           updatedAt: new Date(),
         },
