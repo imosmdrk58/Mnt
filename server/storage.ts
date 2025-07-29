@@ -318,8 +318,60 @@ export class DatabaseStorage implements IStorage {
     return updatedSeries;
   }
 
-  async getSeriesByAuthor(authorId: string): Promise<Series[]> {
-    return await db.select().from(series).where(eq(series.authorId, authorId));
+  async getSeriesByAuthor(authorId: string): Promise<(Series & { author: User })[]> {
+    return await db
+      .select({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        coverImageUrl: series.coverImageUrl,
+        type: series.type,
+        status: series.status,
+        authorId: series.authorId,
+        groupId: series.groupId,
+        genres: series.genres,
+        tags: series.tags,
+        isNSFW: series.isNSFW,
+        viewCount: series.viewCount,
+        likeCount: series.likeCount,
+        bookmarkCount: series.bookmarkCount,
+        rating: series.rating,
+        ratingCount: series.ratingCount,
+        chapterCount: series.chapterCount,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
+        author: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
+      .from(series)
+      .innerJoin(users, eq(series.authorId, users.id))
+      .where(eq(series.authorId, authorId))
+      .orderBy(desc(series.updatedAt));
   }
 
   // Premium chapter unlock operations
@@ -393,11 +445,59 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getRisingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]> {
+  async getRisingSeries(filters?: { timeframe?: string; limit?: number }): Promise<(Series & { author: User })[]> {
     const limit = filters?.limit || 12;
     return await db
-      .select()
+      .select({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        coverImageUrl: series.coverImageUrl,
+        type: series.type,
+        status: series.status,
+        authorId: series.authorId,
+        groupId: series.groupId,
+        genres: series.genres,
+        tags: series.tags,
+        isNSFW: series.isNSFW,
+        viewCount: series.viewCount,
+        likeCount: series.likeCount,
+        bookmarkCount: series.bookmarkCount,
+        rating: series.rating,
+        ratingCount: series.ratingCount,
+        chapterCount: series.chapterCount,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
+        author: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
       .from(series)
+      .innerJoin(users, eq(series.authorId, users.id))
       .where(
         and(
           sql`${series.createdAt} >= NOW() - INTERVAL '30 days'`,
