@@ -100,6 +100,14 @@ export const chapters = pgTable("chapters", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Chapter unlocks table - tracks premium chapter access
+export const chapterUnlocks = pgTable("chapter_unlocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
+  unlockedAt: timestamp("unlocked_at").defaultNow(),
+});
+
 // Groups table
 export const groups = pgTable("groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

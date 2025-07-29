@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -51,25 +51,91 @@ export default function CoinsPage() {
   const { toast } = useToast();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
+  // Load Stripe.js
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.async = true;
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  // Handle payment success/cancel from URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+    const sessionId = urlParams.get('session_id');
+
+    if (success === 'true' && sessionId) {
+      // Confirm payment with backend
+      apiRequest('POST', '/api/coins/confirm-payment', { sessionId })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            toast({
+              title: "Payment Successful!",
+              description: `You've received ${data.coinAmount} coins!`,
+            });
+            queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/user/transactions'] });
+          }
+        })
+        .catch(error => {
+          toast({
+            title: "Payment Error",
+            description: "There was an issue confirming your payment.",
+            variant: "destructive",
+          });
+        })
+        .finally(() => {
+          // Clean up URL
+          window.history.replaceState({}, '', '/coins');
+        });
+    } else if (canceled === 'true') {
+      toast({
+        title: "Payment Canceled",
+        description: "Your payment was canceled.",
+        variant: "destructive",
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/coins');
+    }
+  }, [toast]);
+
   // Fetch transaction history
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: ['/api/user/transactions'],
     enabled: isAuthenticated,
   });
 
-  // Purchase coins mutation
+  // Purchase coins mutation with real Stripe integration
   const purchaseCoinsMutation = useMutation({
     mutationFn: async (packageId: string) => {
       const selectedPkg = coinPackages.find(pkg => pkg.id === packageId);
       if (!selectedPkg) throw new Error('Package not found');
 
-      // Simulate Stripe checkout process
-      const response = await apiRequest('POST', '/api/coins/purchase', {
+      // Create Stripe checkout session
+      const response = await apiRequest('POST', '/api/coins/create-checkout-session', {
         packageId,
         amount: selectedPkg.price,
         coinAmount: selectedPkg.amount + selectedPkg.bonus,
       });
-      return response.json();
+      
+      const { sessionId } = await response.json();
+      
+      // Load Stripe.js and redirect to checkout
+      const stripe = (window as any).Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      return { success: true };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });

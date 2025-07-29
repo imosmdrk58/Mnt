@@ -6,13 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Layout } from "@/components/layout/layout";
 import { ProtectedRoute } from "@/components/ui/protected-route";
-import NotFound from "@/pages/not-found";
+import NotFoundPage from "@/pages/not-found";
 import AuthPage from "@/pages/auth";
 import Home from "@/pages/home";
 import SeriesDetail from "@/pages/series/[id]";
 import Reader from "@/pages/reader/[seriesId]/[chapterId]";
 import CreatorDashboard from "@/pages/creator/dashboard";
 import CreatorUpload from "@/pages/creator/upload";
+import CreatorAnalytics from "@/pages/creator/analytics";
 import Library from "@/pages/library";
 import Profile from "@/pages/profile";
 import BecomeCreator from "@/pages/become-creator";
@@ -20,6 +21,7 @@ import Browse from "@/pages/browse";
 import Trending from "@/pages/trending";
 import CoinsPage from "@/pages/coins";
 import SearchPage from "@/pages/search";
+import UserProfilePage from "@/pages/user/[id]";
 
 function Router() {
   return (
@@ -32,6 +34,7 @@ function Router() {
         <Route path="/search" component={SearchPage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/coins" component={CoinsPage} />
+        <Route path="/user/:id" component={UserProfilePage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />
         
@@ -61,8 +64,13 @@ function Router() {
             <CreatorUpload />
           </ProtectedRoute>
         </Route>
+        <Route path="/creator/analytics">
+          <ProtectedRoute>
+            <CreatorAnalytics />
+          </ProtectedRoute>
+        </Route>
         
-        <Route component={NotFound} />
+        <Route component={NotFoundPage} />
       </Switch>
     </Layout>
   );

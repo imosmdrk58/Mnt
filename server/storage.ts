@@ -2,6 +2,7 @@ import {
   users,
   series,
   chapters,
+  chapterUnlocks,
   comments,
   reviews,
   follows,
@@ -214,6 +215,20 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(series).where(eq(series.authorId, authorId));
   }
 
+  // Premium chapter unlock operations
+  async isChapterUnlocked(userId: string, chapterId: string): Promise<boolean> {
+    const [unlock] = await db.select().from(chapterUnlocks)
+      .where(and(eq(chapterUnlocks.userId, userId), eq(chapterUnlocks.chapterId, chapterId)));
+    return !!unlock;
+  }
+
+  async unlockChapter(userId: string, chapterId: string): Promise<void> {
+    await db.insert(chapterUnlocks).values({
+      userId,
+      chapterId,
+    }).onConflictDoNothing();
+  }
+
   async getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]> {
     const limit = filters?.limit || 10;
     return await db
@@ -256,10 +271,10 @@ export class DatabaseStorage implements IStorage {
 
     // Add filters if provided
     if (filters?.type) {
-      whereConditions = and(whereConditions, eq(series.type, filters.type));
+      whereConditions = and(whereConditions, sql`${series.type} = ${filters.type}`);
     }
     if (filters?.status) {
-      whereConditions = and(whereConditions, eq(series.status, filters.status));
+      whereConditions = and(whereConditions, sql`${series.status} = ${filters.status}`);
     }
     if (filters?.genre) {
       whereConditions = and(whereConditions, like(series.genres, `%${filters.genre}%`));
