@@ -15,6 +15,8 @@ import CreatorDashboard from "@/pages/creator/dashboard";
 import CreatorUpload from "@/pages/creator/upload";
 import Library from "@/pages/library";
 import Profile from "@/pages/profile";
+import BecomeCreator from "@/pages/become-creator";
+import Browse from "@/pages/browse";
 
 function Router() {
   return (
@@ -22,11 +24,17 @@ function Router() {
       <Switch>
         {/* Public routes accessible to all users */}
         <Route path="/" component={Home} />
+        <Route path="/browse" component={Browse} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />
         
         {/* Protected routes that require authentication */}
+        <Route path="/become-creator">
+          <ProtectedRoute>
+            <BecomeCreator />
+          </ProtectedRoute>
+        </Route>
         <Route path="/library">
           <ProtectedRoute>
             <Library />

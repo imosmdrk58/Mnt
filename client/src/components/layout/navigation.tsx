@@ -55,13 +55,39 @@ export function Navigation() {
             </Link>
           </div>
 
-          {/* Centered Search Bar */}
-          <div className="flex-1 flex justify-center max-w-2xl mx-auto">
-            <div className="hidden md:flex w-full max-w-lg">
+          {/* Navigation Menu - Centered */}
+          <div className="flex-1 flex justify-center items-center space-x-8">
+            <div className="hidden lg:flex items-center space-x-6">
+              <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/" ? "text-primary" : "text-muted-foreground"}`}>
+                Home
+              </Link>
+              <Link href="/browse" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/browse" ? "text-primary" : "text-muted-foreground"}`}>
+                Browse
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link href="/library" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/library" ? "text-primary" : "text-muted-foreground"}`}>
+                    Library
+                  </Link>
+                  {user?.isCreator ? (
+                    <Link href="/creator/dashboard" className={`text-sm font-medium transition-colors hover:text-primary ${location.startsWith("/creator") ? "text-primary" : "text-muted-foreground"}`}>
+                      Create
+                    </Link>
+                  ) : (
+                    <Link href="/become-creator" className="text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+                      Become Creator
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+            
+            {/* Search Bar */}
+            <div className="hidden md:flex w-full max-w-md">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Input
                   type="text"
-                  placeholder="Search series, creators, or genres..."
+                  placeholder="Search series, creators..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 bg-background/50 border-border focus:border-primary"

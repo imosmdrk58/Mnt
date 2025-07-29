@@ -42,6 +42,16 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   resetToken: varchar("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  // Creator application fields
+  creatorDisplayName: text("creator_display_name"),
+  creatorBio: text("creator_bio"),
+  creatorPortfolioUrl: text("creator_portfolio_url"),
+  creatorSocialMediaUrl: text("creator_social_media_url"),
+  creatorContentTypes: text("creator_content_types"), // JSON string array
+  creatorExperience: text("creator_experience"),
+  creatorMotivation: text("creator_motivation"),
+  creatorApplicationStatus: text("creator_application_status"), // 'pending', 'approved', 'rejected'
+  creatorApplicationDate: text("creator_application_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

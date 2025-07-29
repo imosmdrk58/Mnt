@@ -36,6 +36,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
 
+  // Creator application endpoint
+  app.post('/api/creator/apply', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { displayName, bio, portfolioUrl, socialMediaUrl, contentTypes, experience, motivation } = req.body;
+
+      if (!displayName || !bio || !contentTypes || contentTypes.length === 0) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Update user to include creator application data
+      const updatedUser = await storage.updateUser(userId, {
+        creatorDisplayName: displayName,
+        creatorBio: bio,
+        creatorPortfolioUrl: portfolioUrl,
+        creatorSocialMediaUrl: socialMediaUrl,
+        creatorContentTypes: JSON.stringify(contentTypes),
+        creatorExperience: experience,
+        creatorMotivation: motivation,
+        creatorApplicationStatus: 'pending',
+        creatorApplicationDate: new Date().toISOString(),
+      });
+
+      res.json({ message: "Creator application submitted successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Error submitting creator application:", error);
+      res.status(500).json({ message: "Failed to submit application" });
+    }
+  });
+
   // Public series routes (no auth required)
   app.get('/api/series', optionalAuth, async (req, res) => {
     try {
