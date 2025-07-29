@@ -121,17 +121,17 @@ The application uses PostgreSQL with the following key entities:
 
 ## Recent Changes
 
-**COMPLETE Profile & Library System Implementation (Current - July 29, 2025)**
+**COMPLETE Reading Progress & Statistics System (Current - July 29, 2025)**
+- ✓ Accurate Progress Calculation: GET /api/progress/:seriesId returns readChapters/totalChapters with real percentages
+- ✓ Chapter Completion Tracking: POST /api/progress/update increments stats only on first completion to prevent double counting
+- ✓ View Count Integration: Chapter and series views auto-increment when chapters are read
 - ✓ Reading Statistics Backend: Added chaptersRead, readingStreak, lastReadAt, readingDates columns to users table
-- ✓ Auto Reading Stats Update: POST /api/user/updateReadingStats triggered when user completes chapter (100% progress)
-- ✓ Real-Time Profile Stats: All profile data now uses actual database queries with proper streak calculation
-- ✓ User Settings System: Complete PATCH /api/user/settings endpoint with nested setting updates
-- ✓ Continue Reading Functionality: GET /api/user/continue-reading with progress tracking and last read info
-- ✓ Profile Settings Panel: Full UI with notifications, reading preferences, content settings, and privacy controls
-- ✓ Reading Progress Auto-Update: Chapter completion automatically increments stats and updates continue reading
-- ✓ Settings Persistence: All user preferences stored in database and applied across platform
-- ✓ Library Management: Continue Reading section shows recent progress with resume functionality
-- ✓ Database Schema Update: Successfully pushed new columns with reading statistics support
+- ✓ Smart Streak Calculation: Daily reading streak calculated from consecutive reading dates with proper date handling
+- ✓ Real-Time Profile Stats: All profile data uses actual database queries instead of mock data
+- ✓ Continue Reading System: Library shows last read chapters with accurate progress bars and resume functionality
+- ✓ User Settings Persistence: Complete settings system with notifications, reading preferences, content, and privacy controls
+- ✓ Profile Settings Panel: Full UI allowing users to customize their reading experience with real backend storage
+- ✓ Database Schema Complete: All new columns successfully added and reading statistics fully operational
 
 **Previous Platform Feature Completion**
 - ✓ Reading Progress Fix: Fixed database constraint error by adding unique constraint on (user_id, series_id, chapter_id)

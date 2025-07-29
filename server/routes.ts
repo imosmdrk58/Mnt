@@ -831,6 +831,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get accurate series progress
+  app.get('/api/progress/:seriesId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { seriesId } = req.params;
+      
+      if (!seriesId) {
+        return res.status(400).json({ message: "Series ID is required" });
+      }
+      
+      const progress = await storage.getSeriesProgress(userId, seriesId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching series progress:", error);
+      res.status(500).json({ message: "Failed to fetch series progress" });
+    }
+  });
+
+  // Update progress when chapter is completed  
+  app.post('/api/progress/update', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { chapterId, seriesId } = req.body;
+      
+      if (!chapterId || !seriesId) {
+        return res.status(400).json({ message: "Chapter ID and Series ID are required" });
+      }
+      
+      await storage.updateReadingStats(userId, chapterId, seriesId);
+      
+      // Return updated progress
+      const progress = await storage.getSeriesProgress(userId, seriesId);
+      res.json({ 
+        message: "Progress updated successfully",
+        progress 
+      });
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      res.status(500).json({ message: "Failed to update progress" });
+    }
+  });
+
   // Create Stripe Checkout Session for coin purchase
   app.post('/api/coins/create-checkout-session', requireAuth, async (req: any, res) => {
     try {

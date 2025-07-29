@@ -339,29 +339,36 @@ export default function Reader() {
     
     // Update reading stats when chapter is completed (100% progress)
     if (progress >= 100 && isAuthenticated) {
-      updateReadingStatsMutation.mutate({
+      updateProgressMutation.mutate({
         chapterId: chapterId!,
         seriesId: seriesId!,
       });
     }
   };
 
-  // Update reading statistics mutation
-  const updateReadingStatsMutation = useMutation({
+  // Update progress and reading statistics mutation
+  const updateProgressMutation = useMutation({
     mutationFn: async ({ chapterId, seriesId }: { chapterId: string; seriesId: string }) => {
-      return await apiRequest("POST", "/api/user/updateReadingStats", {
+      return await apiRequest("POST", "/api/progress/update", {
         chapterId,
         seriesId,
       });
     },
-    onSuccess: () => {
-      // Invalidate profile stats to refresh reading statistics
+    onSuccess: (data) => {
+      // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/user/profile-stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/user/continue-reading'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/progress', seriesId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/reading-progress', seriesId] });
+      
+      // Show progress update notification
+      if (data?.progress) {
+        console.log(`Series progress: ${data.progress.readChapters}/${data.progress.totalChapters} (${data.progress.progress}%)`);
+      }
     },
     onError: (error) => {
       if (!isUnauthorizedError(error)) {
-        console.error("Failed to update reading stats:", error);
+        console.error("Failed to update progress:", error);
       }
     },
   });
