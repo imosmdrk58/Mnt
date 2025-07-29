@@ -69,6 +69,7 @@ export default function Reader() {
   const [likeCount, setLikeCount] = useState(0);
   const [uiToggleManual, setUiToggleManual] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [hasTrackedReading, setHasTrackedReading] = useState(false);
 
   // Fetch series data
   const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
@@ -302,6 +303,11 @@ export default function Reader() {
 
 
 
+  // Reset tracking flag when chapter changes
+  useEffect(() => {
+    setHasTrackedReading(false);
+  }, [chapterId]);
+
   // Update reading progress when it changes
   useEffect(() => {
     if (readingProgress > 0) {
@@ -334,8 +340,27 @@ export default function Reader() {
     navigate(`/series/${seriesId}`);
   };
 
+  // Track reading mutation for reading streak
+  const trackReadingMutation = useMutation({
+    mutationFn: async ({ chapterId, seriesId }: { chapterId: string; seriesId: string }) => {
+      return apiRequest('/api/track-reading', 'POST', { chapterId, seriesId });
+    },
+    onSuccess: () => {
+      console.log('Reading tracked successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to track reading:', error);
+    },
+  });
+
   const handleProgressChange = (progress: number) => {
     setReadingProgress(progress);
+    
+    // Track reading when user reaches 90% and is authenticated
+    if (progress >= 90 && !hasTrackedReading && isAuthenticated && chapterId && seriesId) {
+      setHasTrackedReading(true);
+      trackReadingMutation.mutate({ chapterId, seriesId });
+    }
     
     // Update reading stats when chapter is completed (100% progress)
     if (progress >= 100 && isAuthenticated) {

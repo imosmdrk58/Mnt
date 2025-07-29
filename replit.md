@@ -121,17 +121,27 @@ The application uses PostgreSQL with the following key entities:
 
 ## Recent Changes
 
-**COMPLETE Reading Progress & Statistics System (Current - July 29, 2025)**
+**COMPLETE Real-Time Reading Progress & Streak Tracking System (Current - July 29, 2025)**
+- ✓ Reading History Database: Created reading_history table for tracking all user reading events
+- ✓ Auto-Reading Tracking: Chapter readers automatically track reading at 90% completion for authenticated users
+- ✓ Smart Streak Calculation: Consecutive daily reading streaks calculated from actual reading dates
+- ✓ Real-Time User Stats: API endpoint /api/user/:id/stats provides live chaptersRead, readingStreak, and lastRead data
+- ✓ Live Profile Statistics: User profile pages display real-time reading stats instead of mock data
+- ✓ Achievement System: Dynamic badges based on actual reading achievements (reading streaks, chapter milestones)
+- ✓ Auto-Library Addition: Reading chapters automatically adds series to user's library with progress tracking
+- ✓ Duplicate Prevention: Reading tracking only counts each chapter once per user to prevent stat inflation
+- ✓ Complete Integration: All reader types (webtoon, manga, novel) track reading progress at 90% completion
+- ✓ Database Schema Complete: reading_history table operational with proper user/chapter/series relationships
+
+**Previous Platform Feature Completion**
 - ✓ Accurate Progress Calculation: GET /api/progress/:seriesId returns readChapters/totalChapters with real percentages
 - ✓ Chapter Completion Tracking: POST /api/progress/update increments stats only on first completion to prevent double counting
 - ✓ View Count Integration: Chapter and series views auto-increment when chapters are read
 - ✓ Reading Statistics Backend: Added chaptersRead, readingStreak, lastReadAt, readingDates columns to users table
-- ✓ Smart Streak Calculation: Daily reading streak calculated from consecutive reading dates with proper date handling
 - ✓ Real-Time Profile Stats: All profile data uses actual database queries instead of mock data
 - ✓ Continue Reading System: Library shows last read chapters with accurate progress bars and resume functionality
 - ✓ User Settings Persistence: Complete settings system with notifications, reading preferences, content, and privacy controls
 - ✓ Profile Settings Panel: Full UI allowing users to customize their reading experience with real backend storage
-- ✓ Database Schema Complete: All new columns successfully added and reading statistics fully operational
 
 **Previous Platform Feature Completion**
 - ✓ Reading Progress Fix: Fixed database constraint error by adding unique constraint on (user_id, series_id, chapter_id)

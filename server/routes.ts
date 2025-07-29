@@ -1183,6 +1183,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reading tracking endpoints
+  app.post('/api/track-reading', requireAuth, async (req: any, res) => {
+    try {
+      const { chapterId, seriesId } = req.body;
+      const userId = req.user.id;
+      
+      if (!chapterId || !seriesId) {
+        return res.status(400).json({ message: "Chapter ID and Series ID are required" });
+      }
+      
+      // Track the reading event
+      await storage.trackReading({ userId, chapterId, seriesId });
+      
+      res.json({ message: "Reading tracked successfully" });
+    } catch (error) {
+      console.error("Error tracking reading:", error);
+      res.status(500).json({ message: "Failed to track reading" });
+    }
+  });
+
+  // User stats endpoint
+  app.get('/api/user/:id/stats', optionalAuth, async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const stats = await storage.getUserStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

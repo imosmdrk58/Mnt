@@ -10,6 +10,7 @@ import {
   follows,
   bookmarks,
   readingProgress,
+  readingHistory,
   transactions,
   groups,
   groupMembers,
@@ -26,8 +27,12 @@ import {
   type InsertReview,
   type Group,
   type Follow,
+  type InsertFollow,
   type Bookmark,
   type ReadingProgress,
+  type InsertReadingProgress,
+  type ReadingHistory,
+  type InsertReadingHistory,
   type Transaction,
 } from "@shared/schema";
 import { db } from "./db";
@@ -1176,6 +1181,136 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Update reading statistics and progress when user completes a chapter
+  // Reading history tracking
+  async trackReading(data: InsertReadingHistory): Promise<ReadingHistory> {
+    const [reading] = await db
+      .insert(readingHistory)
+      .values(data)
+      .returning();
+
+    // Update user reading stats  
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if this is the first time reading this chapter
+    const existingEntries = await db
+      .select()
+      .from(readingHistory)
+      .where(
+        and(
+          eq(readingHistory.userId, data.userId),
+          eq(readingHistory.chapterId, data.chapterId)
+        )
+      );
+
+    // Only count if this is the first time reading this chapter
+    if (existingEntries.length === 1) {
+      await db
+        .update(users)
+        .set({ 
+          chaptersRead: sql`${users.chaptersRead} + 1`,
+          lastReadAt: new Date(),
+          readingDates: sql`CASE 
+            WHEN ${users.readingDates} IS NULL THEN ARRAY[${today}]
+            WHEN NOT (${today} = ANY(${users.readingDates})) THEN array_append(${users.readingDates}, ${today})
+            ELSE ${users.readingDates}
+          END`
+        })
+        .where(eq(users.id, data.userId));
+    }
+
+    return reading;
+  }
+
+  async getUserReadingHistory(userId: string, limit: number = 50): Promise<ReadingHistory[]> {
+    return await db
+      .select()
+      .from(readingHistory)
+      .where(eq(readingHistory.userId, userId))
+      .orderBy(desc(readingHistory.createdAt))
+      .limit(limit);
+  }
+
+  async getUserStats(userId: string): Promise<{
+    chaptersRead: number;
+    readingStreak: number;
+    lastRead: { chapterId: string; seriesId: string; title: string; seriesTitle: string } | null;
+  }> {
+    const user = await db
+      .select({
+        chaptersRead: users.chaptersRead,
+        readingDates: users.readingDates,
+        lastReadAt: users.lastReadAt
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user[0]) {
+      return { chaptersRead: 0, readingStreak: 0, lastRead: null };
+    }
+
+    // Calculate reading streak
+    let streak = 0;
+    const today = new Date();
+    const readingDates = user[0].readingDates as string[] || [];
+    
+    if (readingDates.length > 0) {
+      // Sort dates in descending order
+      const sortedDates = readingDates
+        .map(date => new Date(date))
+        .sort((a, b) => b.getTime() - a.getTime());
+
+      // Check if user read today or yesterday (to account for continuing streaks)
+      const todayStr = today.toISOString().split('T')[0];
+      const yesterdayStr = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const lastReadStr = sortedDates[0].toISOString().split('T')[0];
+      
+      if (lastReadStr === todayStr || lastReadStr === yesterdayStr) {
+        streak = 1;
+        // Count consecutive days backwards
+        for (let i = 1; i < sortedDates.length; i++) {
+          const currentDate = sortedDates[i];
+          const previousDate = sortedDates[i - 1];
+          const dayDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (dayDiff === 1) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    // Get last read chapter details
+    let lastRead = null;
+    if (user[0].lastReadAt) {
+      const lastReadChapter = await db
+        .select({
+          chapterId: readingHistory.chapterId,
+          seriesId: readingHistory.seriesId,
+          title: chapters.title,
+          seriesTitle: series.title
+        })
+        .from(readingHistory)
+        .innerJoin(chapters, eq(readingHistory.chapterId, chapters.id))
+        .innerJoin(series, eq(readingHistory.seriesId, series.id))
+        .where(eq(readingHistory.userId, userId))
+        .orderBy(desc(readingHistory.createdAt))
+        .limit(1);
+
+      if (lastReadChapter[0]) {
+        lastRead = lastReadChapter[0];
+      }
+    }
+
+    return {
+      chaptersRead: user[0].chaptersRead || 0,
+      readingStreak: streak,
+      lastRead
+    };
+  }
+
   async updateReadingStats(userId: string, chapterId: string, seriesId: string): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     

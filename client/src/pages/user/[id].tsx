@@ -48,6 +48,12 @@ export default function UserProfilePage() {
     enabled: !!username,
   });
 
+  // Fetch real-time reading stats
+  const { data: readingStats } = useQuery({
+    queryKey: ['/api/user', profile?.id, 'stats'],
+    enabled: !!profile?.id,
+  });
+
   // Follow/unfollow mutation
   const followMutation = useMutation({
     mutationFn: async ({ followingId, isFollowing }: { followingId: string; isFollowing: boolean }) => {
@@ -295,16 +301,63 @@ export default function UserProfilePage() {
           </TabsContent>
 
           {/* Activity Tab */}
-          <TabsContent value="activity">
-            <Card>
-              <CardContent className="text-center py-12">
-                <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Recent Activity</h3>
-                <p className="text-muted-foreground">
-                  Activity feed coming soon
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="activity" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Reading Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    Reading Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Chapters Read</span>
+                      <span className="font-semibold">{readingStats?.chaptersRead || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Reading Streak</span>
+                      <span className="font-semibold">{readingStats?.readingStreak || 0} days</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Read</span>
+                      <span className="font-semibold text-xs">
+                        {readingStats?.lastRead ? readingStats.lastRead.title : "None"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Future Activity Cards */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    Achievements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">First Chapter</Badge>
+                    </div>
+                    {readingStats?.readingStreak && readingStats.readingStreak >= 7 && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default">7 Day Streak</Badge>
+                      </div>
+                    )}
+                    {readingStats?.chaptersRead && readingStats.chaptersRead >= 100 && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default">Chapter Master</Badge>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Creator Stats Tab */}

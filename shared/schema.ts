@@ -204,6 +204,15 @@ export const readingProgress = pgTable("reading_progress", {
   uniqueUserSeriesChapter: unique("unique_user_series_chapter").on(table.userId, table.seriesId, table.chapterId),
 }));
 
+// Reading history table - tracks each time a user reads a chapter
+export const readingHistory = pgTable("reading_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
+  seriesId: varchar("series_id").notNull().references(() => series.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Chapter likes table
 export const chapterLikes = pgTable("chapter_likes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -239,6 +248,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   follows: many(follows),
   bookmarks: many(bookmarks),
   readingProgress: many(readingProgress),
+  readingHistory: many(readingHistory),
   transactions: many(transactions),
   ownedGroups: many(groups),
   groupMemberships: many(groupMembers),
@@ -257,6 +267,7 @@ export const seriesRelations = relations(series, ({ one, many }) => ({
   reviews: many(reviews),
   bookmarks: many(bookmarks),
   readingProgress: many(readingProgress),
+  readingHistory: many(readingHistory),
 }));
 
 export const chaptersRelations = relations(chapters, ({ one, many }) => ({
@@ -266,9 +277,25 @@ export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   }),
   comments: many(comments),
   readingProgress: many(readingProgress),
+  readingHistory: many(readingHistory),
   transactions: many(transactions),
   likes: many(chapterLikes),
   views: many(chapterViews),
+}));
+
+export const readingHistoryRelations = relations(readingHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [readingHistory.userId],
+    references: [users.id],
+  }),
+  chapter: one(chapters, {
+    fields: [readingHistory.chapterId],
+    references: [chapters.id],
+  }),
+  series: one(series, {
+    fields: [readingHistory.seriesId],
+    references: [series.id],
+  }),
 }));
 
 export const chapterLikesRelations = relations(chapterLikes, ({ one }) => ({
@@ -377,6 +404,31 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   updatedAt: true,
 });
 
+export const insertFollowSchema = createInsertSchema(follows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReadingProgressSchema = createInsertSchema(readingProgress).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertReadingHistorySchema = createInsertSchema(readingHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -393,6 +445,12 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Follow = typeof follows.$inferSelect;
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type Bookmark = typeof bookmarks.$inferSelect;
+export type InsertBookmark = z.infer<typeof insertBookmarkSchema>;
 export type ReadingProgress = typeof readingProgress.$inferSelect;
+export type InsertReadingProgress = z.infer<typeof insertReadingProgressSchema>;
+export type ReadingHistory = typeof readingHistory.$inferSelect;
+export type InsertReadingHistory = z.infer<typeof insertReadingHistorySchema>;
 export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
