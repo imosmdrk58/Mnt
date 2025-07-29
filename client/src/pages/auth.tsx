@@ -76,7 +76,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginUser>({
     resolver: zodResolver(loginUserSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -84,6 +84,7 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterUser>({
     resolver: zodResolver(registerUserSchema),
     defaultValues: {
+      username: "",
       email: "",
       password: "",
       firstName: "",
@@ -130,12 +131,12 @@ export default function AuthPage() {
                     <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
                       <FormField
                         control={loginForm.control}
-                        name="email"
+                        name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>Username</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="Enter your email" {...field} />
+                              <Input type="text" placeholder="Enter your username" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -179,6 +180,32 @@ export default function AuthPage() {
                 <CardContent>
                   <Form {...registerForm}>
                     <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input placeholder="johndoe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="john@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
@@ -207,19 +234,6 @@ export default function AuthPage() {
                           )}
                         />
                       </div>
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="Enter your email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                       <FormField
                         control={registerForm.control}
                         name="password"
