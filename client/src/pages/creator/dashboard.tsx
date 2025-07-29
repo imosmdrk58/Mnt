@@ -63,6 +63,13 @@ export default function CreatorDashboard() {
     retry: false,
   });
 
+  // Fetch recent activity
+  const { data: recentActivity = [], isLoading: activityLoading } = useQuery<any[]>({
+    queryKey: ["/api/creator/activity"],
+    enabled: isAuthenticated && !!user,
+    retry: false,
+  });
+
   const handleCreateNewSeries = () => {
     navigate("/creator/upload");
   };
@@ -108,12 +115,7 @@ export default function CreatorDashboard() {
     );
   }
 
-  // Fetch recent activity data
-  const { data: recentActivity = [] } = useQuery({
-    queryKey: ["/api/creator/activity"],
-    enabled: isAuthenticated && !!user,
-    retry: false,
-  });
+
 
   return (
     <div className="min-h-screen bg-background">

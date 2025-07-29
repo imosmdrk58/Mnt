@@ -71,7 +71,7 @@ export default function SeriesDetail() {
 
   // Fetch series data (includes author information) - works without auth
   const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series & { author: User }>({
-    queryKey: ["/api/series", id],
+    queryKey: [`/api/series/${id}`],
     enabled: !!id,
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -95,7 +95,7 @@ export default function SeriesDetail() {
 
   // Fetch reading progress - requires auth
   const { data: readingProgress, error: progressError } = useQuery({
-    queryKey: ["/api/reading-progress", id],
+    queryKey: [`/api/reading-progress/${id}`],
     enabled: !!id && isAuthenticated === true,
     retry: 1,
   });
