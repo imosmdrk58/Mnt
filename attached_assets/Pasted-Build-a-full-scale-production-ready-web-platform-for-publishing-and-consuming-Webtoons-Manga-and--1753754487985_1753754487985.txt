@@ -1,0 +1,229 @@
+Build a full-scale, production-ready web platform for publishing and consuming Webtoons, Manga, and Novels, combining the best of Tapas, MangaDex, and Webtoon, with modern UI/UX, scalable architecture, advanced creator and group systems, and full reader monetization and discovery tools.
+
+🎯 CORE GOALS
+Three series formats: Webtoon (vertical scroll), Manga (paged), and Novels (text-based).
+
+Feature-rich for readers, creators, and groups.
+
+Scalable and beautiful responsive UI with advanced interactivity.
+
+Monetization through coins, ads, and premium access.
+
+🧩 1. CONTENT CREATION SYSTEM
+✅ SERIES TYPES
+Webtoon: Upload vertical strip images (PNG/JPG), infinite scroll reader.
+
+Manga: Upload paged format (drag-drop), reader with page navigation.
+
+Novel: Markdown-based advanced editor with:
+
+Live preview.
+
+Word count, reading time.
+
+Toolbar: bold, italic, links, embeds, spoilers, horizontal lines.
+
+Auto-save drafts.
+
+✅ CHAPTER UPLOAD
+Drag-and-drop images or text.
+
+Page reorder via drag.
+
+Chapter scheduling + preview.
+
+Quality/resolution checks (warn if < 1080px wide).
+
+Support NSFW flags, creator notes, language tagging.
+
+📖 2. ADVANCED READER EXPERIENCE
+Reader modes:
+
+Webtoon: Infinite scroll with fast preload, image compression.
+
+Manga: Page-by-page, swipe or arrow key navigation.
+
+Novel: Adjustable font, line-height, color theme, auto-scroll.
+
+Progress Save per chapter and per series.
+
+Scroll progress bar and "Continue Reading" button.
+
+Reactions (❤️🔥😭👍) per chapter.
+
+Bookmark system with folders, tags, and sort filters.
+
+Auto-dark mode and theme switcher.
+
+👤 3. READER ACCOUNT SYSTEM
+Signup: Email, Google, Apple.
+
+Dashboard with:
+
+Reading history, bookmarks, reviews.
+
+Theme & UI preferences.
+
+Weekly reading goals.
+
+Coin balance and transaction history.
+
+“Elite Reader” badge:
+
+Given after 50+ premium chapters or 10+ reviews.
+
+Unlocks beta features, badge on comments.
+
+💬 4. COMMUNITY FEATURES
+Comments under each chapter (with likes/replies).
+
+Reviews per series (1–5 stars + longform).
+
+Follow/unfollow series and creators.
+
+Report feature for content/comments.
+
+Daily/weekly quests:
+
+“Read 5 chapters”, “Leave 3 comments”, etc.
+
+Grant coin bonuses or XP.
+
+👥 5. GROUP & COLLABORATION SYSTEM (MangaDex-style)
+Users can form or join groups:
+
+Roles: Owner, Editor, Translator, Artist, Contributor.
+
+Each group has:
+
+Page with banner, logo, social links.
+
+List of uploaded series.
+
+Group-exclusive comments/chat.
+
+Optional color theme.
+
+Group management dashboard.
+
+💼 6. CREATOR SYSTEM & DASHBOARD
+Application flow: “Apply to be Creator” (auto-approved for now).
+
+Creator dashboard:
+
+Upload/manage series and chapters.
+
+Schedule releases.
+
+Track analytics (views, likes, bookmarks, coins, CTR).
+
+Unlock monetization at 1000 followers.
+
+See top comments, reports, fan stats.
+
+Enable/disable ads per chapter.
+
+💰 7. COIN MONETIZATION SYSTEM
+Coin packages purchasable via Stripe/PayPal.
+
+Creators set coin price per chapter (e.g., 5–100 coins).
+
+“Fast Pass” system to unlock all available chapters.
+
+Premium chapters marked clearly.
+
+Refund system if chapter is deleted/edited before read.
+
+Transaction logs and analytics for creators.
+
+📢 8. AD SYSTEM (SCALABLE)
+Admin can upload image/video ads.
+
+Ads appear on:
+
+Chapter headers (free content only).
+
+Series pages.
+
+Optional side banners in dashboard.
+
+Creators unlock ads after 1000 followers.
+
+Metrics:
+
+Impressions, clicks, CTR, per chapter and global.
+
+Users can turn off ads via subscription.
+
+🧠 9. DISCOVERY ENGINE
+Homepage carousels:
+
+Trending Today, Weekly Hot, Recently Updated, New.
+
+Advanced filters:
+
+Genre, Status (Ongoing/Complete), Format, Language, Group, Author.
+
+Smart "For You" algorithm:
+
+Based on bookmarks, follows, completed chapters, genre preference.
+
+Badges like “Staff Pick”, “Rising”, “Fan Favorite”.
+
+⚙️ 10. ADMIN TOOLS
+Global dashboard with:
+
+Series analytics.
+
+Top creators.
+
+Revenue breakdown.
+
+Moderate:
+
+Reports, comments, reviews, chapters.
+
+Approve/reject author applications (future).
+
+Ban creators/groups/users.
+
+🎨 11. UI DESIGN (UNIQUE + ADVANCED)
+Visual identity: Clean, elegant, modern with personality. Inspired by Tapas + Apple + Discord.
+
+Card Ratios:
+
+Series cards: 3:4 cover, hover with progress ring, tags, author, stars.
+
+Chapter tiles: 16:9 thumbnail + scroll preview.
+
+Page Transitions: Use framer-motion for fade/slide effects.
+
+Colors/Themes:
+
+Soft dark, light, mint, sakura, noir themes.
+
+Glassmorphism backgrounds.
+
+Comic-style UI touches (speech bubble badges, hover effects).
+
+Mobile:
+
+Swipe reader navigation.
+
+Pull-to-refresh library.
+
+Responsive layout with bottom nav.
+
+🛠 Stack Suggestions (optional)
+Frontend: React + TailwindCSS + framer-motion.
+
+Backend: Supabase / Firebase / Node + PostgreSQL.
+
+Storage: S3-compatible (Cloudflare R2 or Supabase Storage).
+
+Analytics: Plausible, PostHog or built-in.
+
+Payments: Stripe + webhook-based unlock system.
+
+⚠️ Prioritise performance, UX, and mobile-first design. Use modular components, type-safe code, and build for internationalisation (i18n-ready).
+
