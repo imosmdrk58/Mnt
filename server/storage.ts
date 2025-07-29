@@ -169,8 +169,6 @@ export class DatabaseStorage implements IStorage {
     genre?: string; 
     limit?: number 
   }): Promise<Series[]> {
-    let query = db.select().from(series);
-    
     const conditions = [];
     if (filters?.type) {
       conditions.push(eq(series.type, filters.type as any));
@@ -182,18 +180,19 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${series.genres} @> ARRAY[${filters.genre}]`);
     }
     
-    let builtQuery = query;
     if (conditions.length > 0) {
-      builtQuery = builtQuery.where(and(...conditions));
+      let query = db.select().from(series).where(and(...conditions)).orderBy(desc(series.updatedAt));
+      if (filters?.limit) {
+        return await query.limit(filters.limit);
+      }
+      return await query;
+    } else {
+      let query = db.select().from(series).orderBy(desc(series.updatedAt));
+      if (filters?.limit) {
+        return await query.limit(filters.limit);
+      }
+      return await query;
     }
-    
-    builtQuery = builtQuery.orderBy(desc(series.updatedAt));
-    
-    if (filters?.limit) {
-      builtQuery = builtQuery.limit(filters.limit);
-    }
-    
-    return await builtQuery;
   }
 
   async createSeries(seriesData: InsertSeries): Promise<Series> {
@@ -219,7 +218,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(series)
-      .orderBy(desc(series.viewCount), desc(series.followerCount))
+      .orderBy(desc(series.viewCount), desc(series.bookmarkCount))
       .limit(limit);
   }
 
@@ -244,7 +243,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(eq(users.isCreator, true))
-      .orderBy(desc(users.followerCount), desc(users.totalViews))
+      .orderBy(desc(users.followersCount))
       .limit(limit);
   }
 
