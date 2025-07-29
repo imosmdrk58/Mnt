@@ -9,12 +9,17 @@ import WebtoonReader from "@/components/reader/webtoon-reader";
 import MangaReader from "@/components/reader/manga-reader";
 import NovelReader from "@/components/reader/novel-reader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Settings,
@@ -26,6 +31,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  Share2,
+  Heart,
+  Eye,
+  Menu,
+  X,
+  Monitor,
+  Smartphone,
+  Sun,
+  Moon,
+  Palette,
+  Type,
 } from "lucide-react";
 import type { Series, Chapter, Comment } from "@shared/schema";
 import type { ReaderSettings } from "@/types";
@@ -46,6 +62,47 @@ export default function Reader() {
   const [readingProgress, setReadingProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showUI, setShowUI] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
+  // Auto-hide UI after 3 seconds of inactivity
+  useEffect(() => {
+    if (!showUI) return;
+    
+    const timer = setTimeout(() => {
+      setShowUI(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showUI]);
+
+  // Initialize chapter data and check like status
+  useEffect(() => {
+    if (chapter) {
+      setLikeCount(chapter.likeCount || 0);
+    }
+  }, [chapter]);
+
+  // Check if user has liked this chapter
+  const { data: likeStatus } = useQuery({
+    queryKey: [`/api/chapters/${chapterId}/like-status`],
+    enabled: !!chapterId && isAuthenticated,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (likeStatus) {
+      setIsLiked(likeStatus.isLiked);
+    }
+  }, [likeStatus]);
+
+  // Toggle UI visibility
+  const toggleUI = () => {
+    setShowUI(!showUI);
+  };
 
   // Only redirect to login for premium content if needed
   // Note: Basic content reading should be accessible to all users
@@ -137,6 +194,41 @@ export default function Reader() {
       toast({
         title: "Error",
         description: "Failed to post comment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Like chapter mutation
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (isLiked) {
+        await apiRequest("DELETE", `/api/chapters/${chapterId}/like`);
+      } else {
+        await apiRequest("POST", `/api/chapters/${chapterId}/like`);
+      }
+    },
+    onSuccess: () => {
+      const newLiked = !isLiked;
+      setIsLiked(newLiked);
+      setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
+      toast({
+        title: newLiked ? "Chapter liked!" : "Like removed",
+        description: newLiked ? "You liked this chapter" : "Chapter like removed",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Login required",
+          description: "Please log in to like chapters",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update like",
         variant: "destructive",
       });
     },
@@ -295,85 +387,357 @@ export default function Reader() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background z-50">
-      {/* Reader Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" onClick={handleBackToSeries}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          
-          <div className="text-center flex-1 mx-4">
-            <h3 className="font-semibold text-foreground truncate">
-              {series.title}
-            </h3>
-            <p className="text-sm text-muted-foreground truncate">
-              Chapter {chapter.chapterNumber}: {chapter.title}
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowComments(!showComments)}
-            >
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => bookmarkMutation.mutate()}
-              disabled={bookmarkMutation.isPending}
-            >
-              <Bookmark className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="fixed inset-0 bg-background z-50" onClick={toggleUI}>
+      {/* Floating Menu Button - Always Visible */}
+      {!showUI && (
+        <Button
+          variant="secondary"
+          size="icon"
+          className="fixed top-4 right-4 z-50 bg-background/80 backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowUI(true);
+          }}
+        >
+          <Menu className="w-4 h-4" />
+        </Button>
+      )}
 
-      {/* Reader Content */}
-      <div className="pt-16 h-full">
-        {renderReader()}
-      </div>
-
-      {/* Reader Footer */}
-      {series.type !== 'novel' && (
-        <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm border-t border-border p-4">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handlePreviousChapter}
-              disabled={!previousChapter}
-            >
-              <ChevronLeft className="w-4 h-4" />
+      {/* Floating UI Header - Hideable */}
+      {showUI && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300">
+          <div className="flex items-center justify-between p-4">
+            <Button variant="ghost" onClick={handleBackToSeries}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
             
-            <div className="flex-1">
-              <div className="relative">
-                <Progress value={readingProgress} className="h-2" />
-                <span className="absolute -top-6 left-0 text-xs text-muted-foreground">
-                  {Math.round(readingProgress)}% completed
-                </span>
-              </div>
+            <div className="text-center flex-1 mx-4">
+              <h3 className="font-semibold text-foreground truncate">
+                {series.title}
+              </h3>
+              <p className="text-sm text-muted-foreground truncate">
+                Chapter {chapter.chapterNumber}: {chapter.title}
+              </p>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleNextChapter}
-              disabled={!nextChapter}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  likeMutation.mutate();
+                }}
+                disabled={likeMutation.isPending}
+                className={isLiked ? "text-red-500" : ""}
+              >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowShareModal(true);
+                }}
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  bookmarkMutation.mutate();
+                }}
+                disabled={bookmarkMutation.isPending}
+                className={isBookmarked ? "text-blue-500" : ""}
+              >
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSettings(!showSettings);
+                }}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUI(false);
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Chapter Stats */}
+          <div className="flex items-center justify-center space-x-6 pb-3 text-sm text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Heart className="w-3 h-3" />
+              <span>{likeCount}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Eye className="w-3 h-3" />
+              <span>{chapter.viewCount || 0}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <MessageCircle className="w-3 h-3" />
+              <span>{comments.length}</span>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Reader Content - Full Screen */}
+      <div className={`h-full w-full ${showUI ? 'pt-20' : ''}`} onClick={(e) => e.stopPropagation()}>
+        {renderReader()}
+      </div>
+
+      {/* Floating Navigation - Only for manga/webtoon */}
+      {showUI && series.type !== 'novel' && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
+          <Card className="bg-background/95 backdrop-blur-sm">
+            <CardContent className="p-3">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handlePreviousChapter}
+                  disabled={!previousChapter}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center space-x-2 min-w-[200px]">
+                  <Progress value={readingProgress} className="h-2 flex-1" />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {Math.round(readingProgress)}%
+                  </span>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={handleNextChapter}
+                  disabled={!nextChapter}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reader Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Theme</Label>
+              <Select 
+                value={readerSettings.theme} 
+                onValueChange={(value: 'light' | 'dark' | 'sepia') => 
+                  setReaderSettings({...readerSettings, theme: value})
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">
+                    <div className="flex items-center space-x-2">
+                      <Sun className="w-4 h-4" />
+                      <span>Light</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dark">
+                    <div className="flex items-center space-x-2">
+                      <Moon className="w-4 h-4" />
+                      <span>Dark</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="sepia">
+                    <div className="flex items-center space-x-2">
+                      <Palette className="w-4 h-4" />
+                      <span>Sepia</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {series?.type === 'manga' && (
+              <>
+                <div>
+                  <Label className="text-sm font-medium">Reading Direction</Label>
+                  <Select defaultValue="ltr">
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ltr">Left to Right</SelectItem>
+                      <SelectItem value="rtl">Right to Left</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Fit to Width</Label>
+                  <Switch />
+                </div>
+              </>
+            )}
+
+            {series?.type === 'webtoon' && (
+              <div>
+                <Label className="text-sm font-medium">Scroll Mode</Label>
+                <Select defaultValue="vertical">
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vertical">Vertical Scroll</SelectItem>
+                    <SelectItem value="horizontal">Horizontal Scroll</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {series?.type === 'novel' && (
+              <>
+                <div>
+                  <Label className="text-sm font-medium">Font Size</Label>
+                  <div className="flex items-center space-x-3 mt-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setReaderSettings({
+                        ...readerSettings, 
+                        fontSize: Math.max(12, readerSettings.fontSize - 2)
+                      })}
+                    >
+                      <Type className="w-3 h-3" />
+                    </Button>
+                    <span className="text-sm w-12 text-center">{readerSettings.fontSize}px</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setReaderSettings({
+                        ...readerSettings, 
+                        fontSize: Math.min(24, readerSettings.fontSize + 2)
+                      })}
+                    >
+                      <Type className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Auto Scroll</Label>
+                  <Switch 
+                    checked={readerSettings.autoScroll}
+                    onCheckedChange={(checked) => 
+                      setReaderSettings({...readerSettings, autoScroll: checked})
+                    }
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Chapter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Share Link</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <Input 
+                  value={`${window.location.origin}/reader/${seriesId}/${chapterId}`}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/reader/${seriesId}/${chapterId}`);
+                    toast({
+                      title: "Link copied!",
+                      description: "Chapter link copied to clipboard",
+                    });
+                  }}
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Share to Social Media</Label>
+              <div className="flex items-center space-x-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const text = `Check out "${chapter.title}" from ${series.title}!`;
+                    const url = `${window.location.origin}/reader/${seriesId}/${chapterId}`;
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+                  }}
+                >
+                  Twitter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `${window.location.origin}/reader/${seriesId}/${chapterId}`;
+                    window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(chapter.title)}`, '_blank');
+                  }}
+                >
+                  Reddit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const text = `Check out "${chapter.title}" from ${series.title}! ${window.location.origin}/reader/${seriesId}/${chapterId}`;
+                    navigator.clipboard.writeText(text);
+                    toast({
+                      title: "Message copied!",
+                      description: "Share message copied to clipboard",
+                    });
+                  }}
+                >
+                  Discord
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Comments Sidebar */}
       {showComments && (

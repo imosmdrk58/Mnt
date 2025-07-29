@@ -192,6 +192,22 @@ export const readingProgress = pgTable("reading_progress", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Chapter likes table
+export const chapterLikes = pgTable("chapter_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Chapter views table - track unique views per user
+export const chapterViews = pgTable("chapter_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id), // null for anonymous views
+  chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
 // Transactions table
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -239,6 +255,30 @@ export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   comments: many(comments),
   readingProgress: many(readingProgress),
   transactions: many(transactions),
+  likes: many(chapterLikes),
+  views: many(chapterViews),
+}));
+
+export const chapterLikesRelations = relations(chapterLikes, ({ one }) => ({
+  user: one(users, {
+    fields: [chapterLikes.userId],
+    references: [users.id],
+  }),
+  chapter: one(chapters, {
+    fields: [chapterLikes.chapterId],
+    references: [chapters.id],
+  }),
+}));
+
+export const chapterViewsRelations = relations(chapterViews, ({ one }) => ({
+  user: one(users, {
+    fields: [chapterViews.userId],
+    references: [users.id],
+  }),
+  chapter: one(chapters, {
+    fields: [chapterViews.chapterId],
+    references: [chapters.id],
+  }),
 }));
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({

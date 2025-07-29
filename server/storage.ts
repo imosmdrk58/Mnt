@@ -3,6 +3,8 @@ import {
   series,
   chapters,
   chapterUnlocks,
+  chapterLikes,
+  chapterViews,
   comments,
   reviews,
   follows,
@@ -85,6 +87,11 @@ export interface IStorage {
   // Reading progress operations
   updateReadingProgress(userId: string, seriesId: string, chapterId: string, progress: number): Promise<ReadingProgress>;
   getReadingProgress(userId: string, seriesId: string): Promise<ReadingProgress | undefined>;
+
+  // Chapter interaction operations
+  toggleChapterLike(chapterId: string, userId: string): Promise<{ isLiked: boolean; likeCount: number }>;
+  hasUserLikedChapter(chapterId: string, userId: string): Promise<boolean>;
+  trackChapterView(chapterId: string, userId?: string): Promise<void>;
   
   // Transaction operations
   createTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction>;
@@ -872,6 +879,99 @@ export class DatabaseStorage implements IStorage {
       coinsEarned,
       activeSeries: creatorSeries.filter(s => s.status === 'ongoing').length,
     };
+  }
+
+  // Chapter interaction operations
+  async toggleChapterLike(chapterId: string, userId: string): Promise<{ isLiked: boolean; likeCount: number }> {
+    try {
+      // Check if user has already liked this chapter
+      const [existingLike] = await db
+        .select()
+        .from(chapterLikes)
+        .where(and(eq(chapterLikes.chapterId, chapterId), eq(chapterLikes.userId, userId)));
+
+      let isLiked: boolean;
+
+      if (existingLike) {
+        // Remove like
+        await db
+          .delete(chapterLikes)
+          .where(and(eq(chapterLikes.chapterId, chapterId), eq(chapterLikes.userId, userId)));
+        isLiked = false;
+      } else {
+        // Add like
+        await db.insert(chapterLikes).values({
+          chapterId,
+          userId,
+        });
+        isLiked = true;
+      }
+
+      // Update chapter like count
+      const [updatedChapter] = await db
+        .update(chapters)
+        .set({
+          likeCount: sql`(SELECT COUNT(*) FROM ${chapterLikes} WHERE ${chapterLikes.chapterId} = ${chapterId})`,
+        })
+        .where(eq(chapters.id, chapterId))
+        .returning();
+
+      return {
+        isLiked,
+        likeCount: updatedChapter.likeCount || 0,
+      };
+    } catch (error) {
+      console.error("Error toggling chapter like:", error);
+      throw new Error("Failed to toggle chapter like");
+    }
+  }
+
+  async hasUserLikedChapter(chapterId: string, userId: string): Promise<boolean> {
+    try {
+      const [like] = await db
+        .select()
+        .from(chapterLikes)
+        .where(and(eq(chapterLikes.chapterId, chapterId), eq(chapterLikes.userId, userId)));
+
+      return !!like;
+    } catch (error) {
+      console.error("Error checking chapter like status:", error);
+      return false;
+    }
+  }
+
+  async trackChapterView(chapterId: string, userId?: string): Promise<void> {
+    try {
+      // Only track one view per user per chapter
+      if (userId) {
+        const [existingView] = await db
+          .select()
+          .from(chapterViews)
+          .where(and(eq(chapterViews.chapterId, chapterId), eq(chapterViews.userId, userId)));
+
+        if (existingView) {
+          // User has already viewed this chapter, don't track again
+          return;
+        }
+      }
+
+      // Insert new view
+      await db.insert(chapterViews).values({
+        chapterId,
+        userId: userId || null,
+      });
+
+      // Update chapter view count
+      await db
+        .update(chapters)
+        .set({
+          viewCount: sql`(SELECT COUNT(*) FROM ${chapterViews} WHERE ${chapterViews.chapterId} = ${chapterId})`,
+        })
+        .where(eq(chapters.id, chapterId));
+    } catch (error) {
+      console.error("Error tracking chapter view:", error);
+      // Don't throw error as view tracking shouldn't block reading
+    }
   }
 }
 

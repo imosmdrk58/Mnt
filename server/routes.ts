@@ -254,10 +254,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!chapter) {
         return res.status(404).json({ message: "Chapter not found" });
       }
+
+      // Track view if user is logged in (unique per user per chapter)
+      if (req.user) {
+        await storage.trackChapterView(req.params.id, req.user.id);
+      }
+
       res.json(chapter);
     } catch (error) {
       console.error("Error fetching chapter:", error);
       res.status(500).json({ message: "Failed to fetch chapter" });
+    }
+  });
+
+  // Like/unlike chapter endpoint
+  app.post('/api/chapters/:id/like', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+      
+      const result = await storage.toggleChapterLike(id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling chapter like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete('/api/chapters/:id/like', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+      
+      const result = await storage.toggleChapterLike(id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling chapter like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  // Check if user has liked a chapter
+  app.get('/api/chapters/:id/like-status', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+      
+      const isLiked = await storage.hasUserLikedChapter(id, userId);
+      res.json({ isLiked });
+    } catch (error) {
+      console.error("Error checking like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
     }
   });
 
