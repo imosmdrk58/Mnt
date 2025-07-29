@@ -60,47 +60,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         
-        {/* Hero Section */}
-        {featured && (
-          <section className="mb-8">
-            <div className="relative h-80 rounded-2xl overflow-hidden">
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900"
-                style={{
-                  backgroundImage: featured.coverImageUrl 
-                    ? `url('${featured.coverImageUrl}')` 
-                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              />
-              <div className="relative h-full flex items-center justify-start pl-8 md:pl-16">
-                <div className="max-w-lg">
-                  <div className="comic-bubble bg-accent text-accent-foreground px-4 py-2 rounded-lg inline-block mb-4">
-                    <Sparkles className="w-4 h-4 mr-2 inline" />
-                    <span className="text-sm font-medium">Featured</span>
-                  </div>
-                  <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-                    {featured.title}
-                  </h1>
-                  <p className="text-gray-200 text-lg mb-6 line-clamp-3">
-                    {featured.description || 'Discover this amazing series that has captured the hearts of readers worldwide.'}
-                  </p>
-                  <div className="flex items-center space-x-4">
-                    <Button size="lg" className="px-6 py-3">
-                      <Play className="w-5 h-5 mr-2" />
-                      Start Reading
-                    </Button>
-                    <Button variant="secondary" size="lg" className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white border-white/30">
-                      <Bookmark className="w-5 h-5 mr-2" />
-                      Add to Library
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+
 
         {/* Filter Tabs */}
         <section className="mb-8">
