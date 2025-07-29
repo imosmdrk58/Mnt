@@ -132,7 +132,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/series/trending', optionalAuth, async (req, res) => {
     try {
       const { limit } = req.query;
-      const series = await storage.getTrendingSeries(limit ? parseInt(limit as string) : 10);
+      const series = await storage.getTrendingSeries({
+        limit: limit ? parseInt(limit as string) : 10
+      });
       res.json(series);
     } catch (error) {
       console.error("Error fetching trending series:", error);
@@ -407,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(readingProgress);
     } catch (error) {
       console.error("Error updating reading progress:", error);
-      res.status(400).json({ message: "Failed to update reading progress", error: error.message });
+      res.status(400).json({ message: "Failed to update reading progress", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

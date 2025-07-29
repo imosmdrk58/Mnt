@@ -28,38 +28,22 @@ export default function Home() {
     queryKey: ['/api/series/trending', { limit: 1 }],
   });
 
-  // Mock creator data for spotlight
-  const creators = [
-    {
-      id: '1',
-      name: 'SakuraArt',
-      bio: 'Creating magical worlds and unforgettable characters. Specializing in fantasy webtoons with stunning visuals.',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+  // Fetch trending creators for spotlight
+  const { data: creators = [], isLoading: creatorsLoading } = useQuery({
+    queryKey: ['/api/creators/trending', { limit: 3 }],
+    select: (data: any[]) => data.map(creator => ({
+      id: creator.id,
+      name: creator.firstName && creator.lastName ? `${creator.firstName} ${creator.lastName}` : creator.username,
+      bio: creator.creatorBio || `Creator of ${creator.seriesCount || 0} series with ${creator.followersCount || 0} followers`,
+      avatarUrl: creator.profileImageUrl,
       type: 'creator' as const,
-      followersCount: 12500,
-      seriesCount: 3,
-      isElite: true,
-    },
-    {
-      id: '2',
-      name: 'MangaMaster',
-      bio: 'Dark fantasy and psychological thriller manga. Known for intricate storylines and detailed artwork.',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108755-2616b39c90e4?w=100&h=100&fit=crop&crop=face',
-      type: 'creator' as const,
-      followersCount: 8200,
-      seriesCount: 2,
-      isRising: true,
-    },
-    {
-      id: '3',
-      name: 'Scanlation Squad',
-      bio: 'Bringing the best international manga to English readers with high-quality translations.',
-      type: 'group' as const,
-      followersCount: 25000,
-      seriesCount: 15,
-      isStaffPick: true,
-    },
-  ];
+      followersCount: creator.followersCount || 0,
+      seriesCount: creator.seriesCount || 0,
+      isElite: creator.isEliteReader || false,
+      isRising: false, // Will be determined by backend logic
+      isStaffPick: false, // Will be determined by backend logic  
+    }))
+  });
 
   const filterTabs = [
     { id: 'all', label: 'All', active: activeFilter === 'all' },
@@ -161,14 +145,27 @@ export default function Home() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {creators.map((creator) => (
-              <CreatorCard
-                key={creator.id}
-                {...creator}
-                onFollow={() => console.log('Follow creator:', creator.id)}
-                onView={() => console.log('View creator:', creator.id)}
-              />
-            ))}
+            {creatorsLoading ? (
+              // Loading skeleton
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="bg-muted rounded-lg h-48"></div>
+                </div>
+              ))
+            ) : creators.length > 0 ? (
+              creators.map((creator) => (
+                <CreatorCard
+                  key={creator.id}
+                  {...creator}
+                  onFollow={() => console.log('Follow creator:', creator.id)}
+                  onView={() => console.log('View creator:', creator.id)}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground">No trending creators found</p>
+              </div>
+            )}
           </div>
         </section>
 

@@ -48,7 +48,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 glassmorphism-dark backdrop-blur-lg border-b border-border">
+    <nav className="sticky top-0 z-50 bg-background text-foreground transition-colors duration-300 backdrop-blur-lg border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-center items-center h-16 relative">
           {/* Logo - Positioned on left */}
@@ -78,24 +78,11 @@ export function Navigation() {
                 <Flame className="w-4 h-4" />
                 Trending
               </Link>
-              {isAuthenticated && (
-                <>
-                  <Link href="/library" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === "/library" ? "text-primary" : "text-muted-foreground"}`}>
-                    <BookOpen className="w-4 h-4" />
-                    Library
-                  </Link>
-                  {user?.isCreator ? (
-                    <Link href="/creator/dashboard" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location.startsWith("/creator") ? "text-primary" : "text-muted-foreground"}`}>
-                      <PlusCircle className="w-4 h-4" />
-                      Create
-                    </Link>
-                  ) : (
-                    <Link href="/become-creator" className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
-                      <UserPlus className="w-4 h-4" />
-                      Become Creator
-                    </Link>
-                  )}
-                </>
+              {isAuthenticated && user?.isCreator && (
+                <Link href="/creator/dashboard" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location.startsWith("/creator") ? "text-primary" : "text-muted-foreground"}`}>
+                  <PlusCircle className="w-4 h-4" />
+                  Create
+                </Link>
               )}
             </div>
             
@@ -166,12 +153,6 @@ export function Navigation() {
                               : user?.email}
                           </p>
                           {/* Role Badges */}
-                          {user?.isAdmin && (
-                            <Badge variant="destructive" className="text-xs">
-                              <Shield className="w-3 h-3 mr-1" />
-                              Admin
-                            </Badge>
-                          )}
                           {user?.isCreator && (
                             <Badge variant="secondary" className="text-xs">
                               <Star className="w-3 h-3 mr-1" />
@@ -207,11 +188,18 @@ export function Navigation() {
                         Library
                       </Link>
                     </DropdownMenuItem>
-                    {user?.isCreator && (
+                    {user?.isCreator ? (
                       <DropdownMenuItem asChild>
                         <Link href="/creator/dashboard">
                           <Settings className="mr-2 h-4 w-4" />
                           Creator Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem asChild>
+                        <Link href="/become-creator">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          🖊️ Become a Creator
                         </Link>
                       </DropdownMenuItem>
                     )}
