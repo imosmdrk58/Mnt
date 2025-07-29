@@ -47,7 +47,7 @@ export default function SeriesDetail() {
 
   // Redirect to home if not authenticated
   useEffect(() => {
-    if (!isAuthenticated && !user) {
+    if (isAuthenticated === false && !user) {
       toast({
         title: "Unauthorized",
         description: "You need to log in to view series details.",
@@ -61,37 +61,37 @@ export default function SeriesDetail() {
   }, [isAuthenticated, user, toast]);
 
   // Fetch series data
-  const { data: series, isLoading: seriesLoading } = useQuery<Series>({
+  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
     queryKey: ["/api/series", id],
-    enabled: !!id && isAuthenticated,
+    enabled: !!id && isAuthenticated !== false,
     retry: false,
   });
 
   // Fetch author data when series is loaded
-  const { data: author } = useQuery({
+  const { data: author, error: authorError } = useQuery({
     queryKey: ["/api/users", series?.authorId],
-    enabled: !!series?.authorId,
+    enabled: !!series?.authorId && isAuthenticated !== false,
     retry: false,
   });
 
   // Fetch chapters
-  const { data: chapters = [], isLoading: chaptersLoading } = useQuery<Chapter[]>({
+  const { data: chapters = [], isLoading: chaptersLoading, error: chaptersError } = useQuery<Chapter[]>({
     queryKey: ["/api/series", id, "chapters"],
-    enabled: !!id && isAuthenticated,
+    enabled: !!id && isAuthenticated !== false,
     retry: false,
   });
 
   // Fetch reviews
-  const { data: reviews = [], isLoading: reviewsLoading } = useQuery<Review[]>({
+  const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery<Review[]>({
     queryKey: ["/api/series", id, "reviews"],
-    enabled: !!id && isAuthenticated,
+    enabled: !!id && isAuthenticated !== false,
     retry: false,
   });
 
   // Fetch reading progress
-  const { data: readingProgress } = useQuery({
+  const { data: readingProgress, error: progressError } = useQuery({
     queryKey: ["/api/reading-progress", id],
-    enabled: !!id && isAuthenticated,
+    enabled: !!id && isAuthenticated !== false,
     retry: false,
   });
 
@@ -253,6 +253,7 @@ export default function SeriesDetail() {
     }
   };
 
+  // Handle loading states and errors
   if (seriesLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -272,6 +273,32 @@ export default function SeriesDetail() {
                   <Skeleton className="h-10 w-24" />
                 </div>
               </div>
+            </div>
+          </div>
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  // Handle error states
+  if (seriesError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Series</h1>
+            <p className="text-muted-foreground mb-6">
+              There was an error loading this series. Please try again.
+            </p>
+            <div className="space-x-4">
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/")}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
             </div>
           </div>
         </main>
@@ -356,7 +383,7 @@ export default function SeriesDetail() {
                     onClick={() => navigate(`/user/${series.authorId}`)}
                     className="text-primary hover:text-primary/80 font-medium hover:underline"
                   >
-                    {author?.username || "Loading..."}
+                    {series.author?.username || series.author?.firstName || author?.username || "Unknown Author"}
                   </button>
                 </p>
                 

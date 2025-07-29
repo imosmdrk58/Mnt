@@ -166,8 +166,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Series operations
-  async getSeries(id: string): Promise<Series | undefined> {
-    const [seriesData] = await db.select().from(series).where(eq(series.id, id));
+  async getSeries(id: string): Promise<(Series & { author: User }) | undefined> {
+    const [seriesData] = await db
+      .select({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        coverImageUrl: series.coverImageUrl,
+        type: series.type,
+        status: series.status,
+        authorId: series.authorId,
+        groupId: series.groupId,
+        genres: series.genres,
+        tags: series.tags,
+        isNSFW: series.isNSFW,
+        viewCount: series.viewCount,
+        likeCount: series.likeCount,
+        bookmarkCount: series.bookmarkCount,
+        rating: series.rating,
+        ratingCount: series.ratingCount,
+        chapterCount: series.chapterCount,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
+        author: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
+      .from(series)
+      .innerJoin(users, eq(series.authorId, users.id))
+      .where(eq(series.id, id));
     return seriesData;
   }
 
