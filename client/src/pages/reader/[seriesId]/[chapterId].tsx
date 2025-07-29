@@ -336,7 +336,35 @@ export default function Reader() {
 
   const handleProgressChange = (progress: number) => {
     setReadingProgress(progress);
+    
+    // Update reading stats when chapter is completed (100% progress)
+    if (progress >= 100 && isAuthenticated) {
+      updateReadingStatsMutation.mutate({
+        chapterId: chapterId!,
+        seriesId: seriesId!,
+      });
+    }
   };
+
+  // Update reading statistics mutation
+  const updateReadingStatsMutation = useMutation({
+    mutationFn: async ({ chapterId, seriesId }: { chapterId: string; seriesId: string }) => {
+      return await apiRequest("POST", "/api/user/updateReadingStats", {
+        chapterId,
+        seriesId,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate profile stats to refresh reading statistics
+      queryClient.invalidateQueries({ queryKey: ['/api/user/profile-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/continue-reading'] });
+    },
+    onError: (error) => {
+      if (!isUnauthorizedError(error)) {
+        console.error("Failed to update reading stats:", error);
+      }
+    },
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

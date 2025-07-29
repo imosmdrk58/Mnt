@@ -125,6 +125,25 @@ export interface IStorage {
     lastReadDate: string | null;
     averageReadingTime: number;
   }>;
+  
+  // Reading activity tracking
+  updateReadingStats(userId: string, chapterId: string, seriesId: string): Promise<void>;
+  
+  // User settings management
+  getUserSettings(userId: string): Promise<any>;
+  updateUserSettings(userId: string, settings: any): Promise<void>;
+  
+  // Continue reading functionality
+  getContinueReading(userId: string): Promise<Array<{
+    seriesId: string;
+    seriesTitle: string;
+    seriesCover: string;
+    lastChapterId: string;
+    lastChapterTitle: string;
+    lastChapterNumber: number;
+    progress: number;
+    lastReadAt: Date;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1049,7 +1068,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Profile stats implementation
+  // Profile stats implementation - now uses real user data from database
   async getProfileStats(userId: string): Promise<{
     chaptersReadThisWeek: number;
     readingStreak: number;
@@ -1062,6 +1081,16 @@ export class DatabaseStorage implements IStorage {
     lastReadDate: string | null;
     averageReadingTime: number;
   }> {
+    // Get user data including real reading statistics
+    const [user] = await db
+      .select({
+        chaptersRead: users.chaptersRead,
+        readingStreak: users.readingStreak,
+        lastReadAt: users.lastReadAt,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -1073,17 +1102,6 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(readingProgress.userId, userId),
           gte(readingProgress.updatedAt, oneWeekAgo),
-          eq(readingProgress.progress, '100.00')
-        )
-      );
-
-    // Get total chapters read (100% progress)
-    const totalChaptersRead = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(readingProgress)
-      .where(
-        and(
-          eq(readingProgress.userId, userId),
           eq(readingProgress.progress, '100.00')
         )
       );
@@ -1117,55 +1135,161 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(readingProgress.updatedAt))
       .limit(1);
 
-    // Calculate reading streak (consecutive days with reading activity)
-    const readingDays = await db
-      .selectDistinct({
-        date: sql<string>`DATE(${readingProgress.updatedAt})`
-      })
-      .from(readingProgress)
-      .where(eq(readingProgress.userId, userId))
-      .orderBy(desc(sql`DATE(${readingProgress.updatedAt})`));
-
-    let readingStreak = 0;
-    const today = new Date().toISOString().split('T')[0];
-    
-    for (let i = 0; i < readingDays.length; i++) {
-      const expectedDate = new Date();
-      expectedDate.setDate(expectedDate.getDate() - i);
-      const expectedDateStr = expectedDate.toISOString().split('T')[0];
-      
-      if (readingDays[i]?.date === expectedDateStr) {
-        readingStreak++;
-      } else {
-        break;
-      }
-    }
-
-    // Get most read genre (simplified - would need more complex queries for real implementation)
+    // Get most read genre
     const favoriteGenres = await db
       .select({
-        genre: series.genre,
+        genre: sql<string>`${series.genres}[1]`,
         count: sql<number>`count(*)`
       })
       .from(readingProgress)
       .leftJoin(series, eq(readingProgress.seriesId, series.id))
       .where(eq(readingProgress.userId, userId))
-      .groupBy(series.genre)
+      .groupBy(sql`${series.genres}[1]`)
       .orderBy(desc(sql<number>`count(*)`))
       .limit(1);
 
     return {
       chaptersReadThisWeek: chaptersReadThisWeek[0]?.count || 0,
-      readingStreak,
+      readingStreak: user?.readingStreak || 0, // Real data from user table
       totalLikesGiven: totalLikesGiven[0]?.count || 0,
       seriesFollowed: seriesFollowed[0]?.count || 0,
       viewsThisWeek: 0, // Would need chapter view tracking
-      totalChaptersRead: totalChaptersRead[0]?.count || 0,
+      totalChaptersRead: user?.chaptersRead || 0, // Real data from user table
       favoriteGenre: favoriteGenres[0]?.genre || 'Unknown',
       lastReadSeries: lastReadInfo[0]?.seriesTitle || null,
-      lastReadDate: lastReadInfo[0]?.updatedAt?.toISOString() || null,
-      averageReadingTime: 15 + Math.floor(Math.random() * 30), // 15-45 min average
+      lastReadDate: user?.lastReadAt?.toISOString() || null, // Real data from user table
+      averageReadingTime: 15 + Math.floor(Math.random() * 30), // Could be calculated from reading sessions
     };
+  }
+
+  // Update reading statistics when user completes a chapter
+  async updateReadingStats(userId: string, chapterId: string, seriesId: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get current user data
+    const [currentUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!currentUser) return;
+    
+    // Parse existing reading dates
+    let readingDates: string[] = [];
+    if (currentUser.readingDates) {
+      try {
+        readingDates = JSON.parse(currentUser.readingDates);
+      } catch (e) {
+        readingDates = [];
+      }
+    }
+    
+    // Add today's date if not already present
+    if (!readingDates.includes(today)) {
+      readingDates.push(today);
+      readingDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Sort desc
+      
+      // Keep only last 365 days
+      readingDates = readingDates.slice(0, 365);
+    }
+    
+    // Calculate new reading streak
+    let newStreak = 0;
+    const sortedDates = [...readingDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+      const expectedDate = new Date();
+      expectedDate.setDate(expectedDate.getDate() - i);
+      const expectedDateStr = expectedDate.toISOString().split('T')[0];
+      
+      if (sortedDates[i] === expectedDateStr) {
+        newStreak++;
+      } else {
+        break;
+      }
+    }
+    
+    // Update user statistics
+    await db
+      .update(users)
+      .set({
+        chaptersRead: sql`${users.chaptersRead} + 1`,
+        readingStreak: newStreak,
+        lastReadAt: new Date(),
+        readingDates: JSON.stringify(readingDates),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  // Get user settings
+  async getUserSettings(userId: string): Promise<any> {
+    const [user] = await db
+      .select({ settings: users.settings })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user?.settings) {
+      return null;
+    }
+    
+    try {
+      return JSON.parse(user.settings);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Update user settings
+  async updateUserSettings(userId: string, settings: any): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        settings: JSON.stringify(settings),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  }
+
+  // Get continue reading data
+  async getContinueReading(userId: string): Promise<Array<{
+    seriesId: string;
+    seriesTitle: string;
+    seriesCover: string;
+    lastChapterId: string;
+    lastChapterTitle: string;
+    lastChapterNumber: number;
+    progress: number;
+    lastReadAt: Date;
+  }>> {
+    const continueReading = await db
+      .select({
+        seriesId: readingProgress.seriesId,
+        seriesTitle: series.title,
+        seriesCover: series.coverImageUrl,
+        lastChapterId: readingProgress.chapterId,
+        lastChapterTitle: chapters.title,
+        lastChapterNumber: chapters.chapterNumber,
+        progress: readingProgress.progress,
+        lastReadAt: readingProgress.updatedAt,
+      })
+      .from(readingProgress)
+      .leftJoin(series, eq(readingProgress.seriesId, series.id))
+      .leftJoin(chapters, eq(readingProgress.chapterId, chapters.id))
+      .where(eq(readingProgress.userId, userId))
+      .orderBy(desc(readingProgress.updatedAt))
+      .limit(10);
+
+    return continueReading.map(item => ({
+      seriesId: item.seriesId,
+      seriesTitle: item.seriesTitle || 'Unknown Series',
+      seriesCover: item.seriesCover || '',
+      lastChapterId: item.lastChapterId,
+      lastChapterTitle: item.lastChapterTitle || 'Unknown Chapter',
+      lastChapterNumber: item.lastChapterNumber || 0,
+      progress: parseFloat(item.progress || '0'),
+      lastReadAt: item.lastReadAt || new Date(),
+    }));
   }
 }
 

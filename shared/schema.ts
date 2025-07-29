@@ -53,6 +53,13 @@ export const users = pgTable("users", {
   creatorMotivation: text("creator_motivation"),
   creatorApplicationStatus: text("creator_application_status"), // 'pending', 'approved', 'rejected'
   creatorApplicationDate: text("creator_application_date"),
+  // Reading Statistics
+  chaptersRead: integer("chapters_read").default(0),
+  readingStreak: integer("reading_streak").default(0),
+  lastReadAt: timestamp("last_read_at"),
+  readingDates: text("reading_dates"), // JSON array of dates for streak calculation
+  // User Settings
+  settings: text("settings"), // JSON object for user preferences
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

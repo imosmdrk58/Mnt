@@ -752,6 +752,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update reading statistics when user completes chapter
+  app.post('/api/user/updateReadingStats', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { chapterId, seriesId } = req.body;
+      
+      if (!chapterId || !seriesId) {
+        return res.status(400).json({ message: "Chapter ID and Series ID are required" });
+      }
+      
+      await storage.updateReadingStats(userId, chapterId, seriesId);
+      res.json({ message: "Reading statistics updated successfully" });
+    } catch (error) {
+      console.error("Error updating reading stats:", error);
+      res.status(500).json({ message: "Failed to update reading statistics" });
+    }
+  });
+
+  // Get user settings
+  app.get('/api/user/settings', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const settings = await storage.getUserSettings(userId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching user settings:", error);
+      res.status(500).json({ message: "Failed to fetch user settings" });
+    }
+  });
+
+  // Update user settings
+  app.patch('/api/user/settings', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { settingKey, value, settings } = req.body;
+      
+      if (settings) {
+        // Update entire settings object
+        await storage.updateUserSettings(userId, settings);
+      } else if (settingKey && value !== undefined) {
+        // Update specific setting
+        const currentSettings = await storage.getUserSettings(userId) || {};
+        const keys = settingKey.split('.');
+        let current = currentSettings;
+        
+        // Navigate to the nested property
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) {
+            current[keys[i]] = {};
+          }
+          current = current[keys[i]];
+        }
+        
+        // Set the value
+        current[keys[keys.length - 1]] = value;
+        await storage.updateUserSettings(userId, currentSettings);
+      } else {
+        return res.status(400).json({ message: "Either 'settings' object or 'settingKey' and 'value' are required" });
+      }
+      
+      res.json({ message: "Settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+      res.status(500).json({ message: "Failed to update user settings" });
+    }
+  });
+
+  // Get continue reading data
+  app.get('/api/user/continue-reading', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const continueReading = await storage.getContinueReading(userId);
+      res.json(continueReading);
+    } catch (error) {
+      console.error("Error fetching continue reading data:", error);
+      res.status(500).json({ message: "Failed to fetch continue reading data" });
+    }
+  });
+
   // Create Stripe Checkout Session for coin purchase
   app.post('/api/coins/create-checkout-session', requireAuth, async (req: any, res) => {
     try {
