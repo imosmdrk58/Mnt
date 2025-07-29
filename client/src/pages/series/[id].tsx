@@ -232,12 +232,12 @@ export default function SeriesDetail() {
         }
       }
       
-      navigate(`/reader/${series.type}/${targetChapter.id}`);
+      navigate(`/reader/${id}/${targetChapter.id}`);
     }
   };
 
   const handleChapterClick = (chapterId: string) => {
-    navigate(`/reader/${series.type}/${chapterId}`);
+    navigate(`/reader/${id}/${chapterId}`);
   };
 
   const formatDate = (dateString: string) => {

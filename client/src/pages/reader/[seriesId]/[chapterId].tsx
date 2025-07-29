@@ -47,47 +47,41 @@ export default function Reader() {
   const [showComments, setShowComments] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated && !user) {
-      toast({
-        title: "Unauthorized",
-        description: "You need to log in to read content.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, user, toast]);
+  // Only redirect to login for premium content if needed
+  // Note: Basic content reading should be accessible to all users
 
   // Fetch series data
-  const { data: series, isLoading: seriesLoading } = useQuery<Series>({
-    queryKey: ["/api/series", seriesId],
-    enabled: !!seriesId && isAuthenticated,
-    retry: false,
+  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
+    queryKey: [`/api/series/${seriesId}`],
+    enabled: !!seriesId,
+    retry: 2,
+    onError: (err) => {
+      console.error("Series fetch error:", err);
+    },
   });
 
   // Fetch current chapter
-  const { data: chapter, isLoading: chapterLoading } = useQuery<Chapter>({
-    queryKey: ["/api/chapters", chapterId],
-    enabled: !!chapterId && isAuthenticated,
-    retry: false,
+  const { data: chapter, isLoading: chapterLoading, error: chapterError } = useQuery<Chapter>({
+    queryKey: [`/api/chapters/${chapterId}`],
+    enabled: !!chapterId,
+    retry: 2,
+    onError: (err) => {
+      console.error("Chapter fetch error:", err);
+    },
   });
 
   // Fetch all chapters for navigation
   const { data: allChapters = [] } = useQuery<Chapter[]>({
     queryKey: [`/api/series/${seriesId}/chapters`],
-    enabled: !!seriesId && isAuthenticated,
-    retry: false,
+    enabled: !!seriesId,
+    retry: 2,
   });
 
   // Fetch comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
     queryKey: [`/api/chapters/${chapterId}/comments`],
-    enabled: !!chapterId && isAuthenticated,
-    retry: false,
+    enabled: !!chapterId,
+    retry: 2,
   });
 
   // Update reading progress

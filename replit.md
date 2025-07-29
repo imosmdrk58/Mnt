@@ -121,14 +121,20 @@ The application uses PostgreSQL with the following key entities:
 
 ## Recent Changes
 
-**Fixed Incorrect Data Fetching in Creator Series Management (Current)**
+**Fixed "Content Not Found" Chapter Reader Issue (Current)**
+- ✓ Fixed React Query endpoints: Updated chapter reader to use `/api/chapters/${chapterId}` instead of array format
+- ✓ Corrected series navigation: Fixed series detail page to navigate to `/reader/${seriesId}/${chapterId}` instead of `/reader/${type}/${chapterId}`
+- ✓ Removed authentication requirement: Chapter reading now works without login for public content
+- ✓ Enhanced error handling: Added proper error logging for chapter and series fetch operations
+- ✓ Fixed cache invalidation: Updated all reader-related query cache keys to use proper REST endpoint formats
+- ✓ Verified API endpoints: Confirmed `/api/series/:id` and `/api/chapters/:id` return proper data structure
+- ✓ Tested with real data: Reader page now successfully loads chapters with existing test content
+
+**Previous Creator Series Management Fixes**
 - ✓ Database setup: Created PostgreSQL database and pushed schema tables for authentication and content management
 - ✓ Fixed React Query patterns: Updated series management page to use RESTful endpoints instead of query string parameters
 - ✓ Corrected API calls: Changed `/api/series?id=...` to `/api/series/${seriesId}` for individual series data
-- ✓ Updated chapter fetching: Fixed `/api/series?id=...&chapters` to `/api/series/${seriesId}/chapters`
-- ✓ Fixed cache invalidation: Updated all queryClient.invalidateQueries calls to use proper endpoint formats
 - ✓ Applied fixes across components: Updated series management, reader pages, and comment sections
-- ✓ Verified server startup: Application now runs successfully without database errors
 
 **Previous Series Detail Page Fixes**
 - ✓ Fixed authentication logic: Series pages load without requiring login (uses optionalAuth)
