@@ -229,11 +229,13 @@ export class DatabaseStorage implements IStorage {
     limit?: number 
   }): Promise<(Series & { author: User })[]> {
     const conditions = [];
-    if (filters?.type) {
-      conditions.push(eq(series.type, filters.type as any));
+    
+    // Validate enum values before using them
+    if (filters?.type && ['webtoon', 'manga', 'novel'].includes(filters.type)) {
+      conditions.push(eq(series.type, filters.type as 'webtoon' | 'manga' | 'novel'));
     }
-    if (filters?.status) {
-      conditions.push(eq(series.status, filters.status as any));
+    if (filters?.status && ['ongoing', 'completed', 'hiatus'].includes(filters.status)) {
+      conditions.push(eq(series.status, filters.status as 'ongoing' | 'completed' | 'hiatus'));
     }
     if (filters?.genre) {
       conditions.push(sql`${series.genres} @> ARRAY[${filters.genre}]`);

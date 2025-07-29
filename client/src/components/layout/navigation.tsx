@@ -119,12 +119,18 @@ export function Navigation() {
             {isAuthenticated ? (
               <>
                 {/* Coins Balance */}
-                <div className="hidden sm:flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
-                  <Coins className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                    {user?.coinBalance?.toLocaleString() || 0}
-                  </span>
-                </div>
+                <Button 
+                  variant="ghost" 
+                  className="hidden sm:flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
+                  asChild
+                >
+                  <Link href="/coins">
+                    <Coins className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                      {user?.coinBalance?.toLocaleString() || 0}
+                    </span>
+                  </Link>
+                </Button>
 
                 {/* User Menu */}
                 <DropdownMenu>
