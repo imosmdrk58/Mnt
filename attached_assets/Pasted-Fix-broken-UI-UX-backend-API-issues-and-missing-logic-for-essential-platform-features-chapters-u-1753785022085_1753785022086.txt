@@ -1,0 +1,124 @@
+Fix broken UI/UX, backend API issues, and missing logic for essential platform features: chapters, user profiles, coin purchases, group systems, and creator tools. Remove mock data across site and ensure real data integration.
+
+🔧 HIGH-PRIORITY FIXES (Critical Bugs)
+Series Page UI Cleanup (see screenshot):
+
+Views, Chapters, Bookmarks are spaced out too far.
+
+Fix random 0 underneath buttons (possible variable/code leak).
+
+Replace "Bookmarks" label with "Follows".
+
+Use a proper user-follow icon instead of loveheart.
+
+Display author properly:
+
+Username instead of ID string.
+
+Make clickable to /user/:username.
+
+If author is a group, show group name & link.
+
+Chapter creation inside series page is broken ([object Object] 404 bug).
+
+Fix invalid route bug in:
+
+typescript
+Copy
+Edit
+/api/series/[object%20Object]
+Chapter Creation System:
+
+New page /creator/series/:id/create-chapter
+
+Functionality:
+
+Upload images (drag/drop or select).
+
+Preview and sort image order via drag-and-drop.
+
+Title, description, publish options.
+
+Save and publish.
+
+Smooth UX and working backend endpoint.
+
+Cover Image & Description Validation:
+
+Ensure both are required on series creation.
+
+Auto-resize and optimize uploaded cover to consistent dimensions (fit card layout).
+🔐 AUTH & PROFILE FIXES
+User Profile Pages:
+
+/user/:id or /user/:username should show:
+
+Username (not email!)
+
+Series by user.
+
+Follow button.
+
+Email should never be shown for privacy reasons.
+
+Show Username Globally:
+
+Navbar.
+
+Creator/Series/Chapter attribution.
+
+Comments, reviews, etc.
+💰 COINS / MONETIZATION SYSTEM
+Coin Purchase System:
+
+Coins button in navbar should lead to /coins.
+
+Show bundles (e.g. 100 coins for $1.99).
+
+Integrate real Stripe checkout (no free coins).
+
+Track purchases in user profile.
+
+Premium Chapters (Locked):
+
+If series has 500+ followers, creator can mark chapters as premium.
+
+Readers unlock with coins.
+
+Show lock icon on those chapters.
+
+Ad Revenue System:
+
+If series hits 1000+ followers, unlock:
+
+/creator/dashboard/ads page.
+
+Show impressions, CTR, earnings.
+
+Show per-chapter analytics.
+
+🧪 MOCK DATA CLEANUP
+Remove all mock data:
+
+Home spotlight.
+
+Creator dashboard stats.
+
+Premium/ad features.
+
+Library, coins, followers.
+
+✅ Developer Acceptance Criteria
+All features must be functional end-to-end (UI + backend).
+
+All routes, data fetching, creation, and editing must use real DB and APIs (no mock).
+
+Fully responsive (mobile/tablet/desktop).
+
+No console errors or API failures.
+
+Coin system must be tested in Stripe test mode.
+
+Premium/ad systems must show actual thresholds (not unlocked by default).
+
+404 and error handling gracefully managed.

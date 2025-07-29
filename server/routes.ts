@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, optionalAuth } from "./auth";
-import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema } from "@shared/schema";
+import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema, type Series } from "@shared/schema";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -166,6 +166,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching series:", error);
       res.status(500).json({ message: "Failed to fetch series" });
+    }
+  });
+
+  // User profile route
+  app.get('/api/users/:id', optionalAuth, async (req, res) => {
+    try {
+      const user = await storage.getUserById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive information
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
@@ -643,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, resetToken, resetTokenExpiry, ...publicUser } = user;
       
       // Get user's series if they're a creator
-      let userSeries = [];
+      let userSeries: Series[] = [];
       if (user.isCreator) {
         userSeries = await storage.getSeriesByAuthor(userId);
       }
@@ -683,17 +700,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user has enough coins
       const user = await storage.getUser(userId);
-      if (!user || user.coinBalance < chapter.coinPrice) {
+      if (!user || (user.coinBalance || 0) < (chapter.coinPrice || 0)) {
         return res.status(400).json({ 
           message: "Insufficient coins",
-          required: chapter.coinPrice,
+          required: chapter.coinPrice || 0,
           balance: user?.coinBalance || 0
         });
       }
 
       // Deduct coins and unlock chapter
       await storage.updateUser(userId, {
-        coinBalance: user.coinBalance - chapter.coinPrice
+        coinBalance: (user.coinBalance || 0) - (chapter.coinPrice || 0)
       });
 
       await storage.unlockChapter(userId, chapterId);
@@ -701,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create transaction record
       await storage.createTransaction({
         userId,
-        amount: -chapter.coinPrice,
+        amount: -(chapter.coinPrice || 0),
         type: 'unlock',
         description: `Unlocked chapter: ${chapter.title}`,
         chapterId,
@@ -710,8 +727,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         message: "Chapter unlocked successfully",
         unlocked: true,
-        coinsSpent: chapter.coinPrice,
-        remainingBalance: user.coinBalance - chapter.coinPrice
+        coinsSpent: chapter.coinPrice || 0,
+        remainingBalance: (user.coinBalance || 0) - (chapter.coinPrice || 0)
       });
     } catch (error) {
       console.error("Error unlocking chapter:", error);

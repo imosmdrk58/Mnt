@@ -22,6 +22,7 @@ import Trending from "@/pages/trending";
 import CoinsPage from "@/pages/coins";
 import SearchPage from "@/pages/search";
 import UserProfilePage from "@/pages/user/[id]";
+import CreateChapter from "@/pages/creator/create-chapter";
 
 function Router() {
   return (
@@ -67,6 +68,11 @@ function Router() {
         <Route path="/creator/analytics">
           <ProtectedRoute>
             <CreatorAnalytics />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/creator/series/:seriesId/create-chapter">
+          <ProtectedRoute>
+            <CreateChapter />
           </ProtectedRoute>
         </Route>
         

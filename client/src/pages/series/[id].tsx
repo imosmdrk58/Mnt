@@ -30,6 +30,7 @@ import {
   ThumbsUp,
   Flag,
   ArrowLeft,
+  UserPlus,
 } from "lucide-react";
 import type { Series, Chapter, Review, Comment } from "@shared/schema";
 
@@ -63,6 +64,13 @@ export default function SeriesDetail() {
   const { data: series, isLoading: seriesLoading } = useQuery<Series>({
     queryKey: ["/api/series", id],
     enabled: !!id && isAuthenticated,
+    retry: false,
+  });
+
+  // Fetch author data when series is loaded
+  const { data: author } = useQuery({
+    queryKey: ["/api/users", series?.authorId],
+    enabled: !!series?.authorId,
     retry: false,
   });
 
@@ -343,7 +351,13 @@ export default function SeriesDetail() {
                 </h1>
                 
                 <p className="text-muted-foreground mb-4">
-                  by {series.authorId} {/* This should be populated with actual author name */}
+                  by{" "}
+                  <button
+                    onClick={() => navigate(`/user/${series.authorId}`)}
+                    className="text-primary hover:text-primary/80 font-medium hover:underline"
+                  >
+                    {author?.username || "Loading..."}
+                  </button>
                 </p>
                 
                 <p className="text-foreground leading-relaxed">
@@ -352,7 +366,7 @@ export default function SeriesDetail() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-1 mb-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -376,10 +390,10 @@ export default function SeriesDetail() {
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-1 mb-1">
-                    <Bookmark className="w-4 h-4 text-muted-foreground" />
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
                     <span className="font-semibold">{series.bookmarkCount}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Bookmarks</p>
+                  <p className="text-sm text-muted-foreground">Follows</p>
                 </div>
               </div>
 
@@ -419,7 +433,7 @@ export default function SeriesDetail() {
                   onClick={() => followMutation.mutate()}
                   disabled={followMutation.isPending}
                 >
-                  <Heart className="w-5 h-5 mr-2" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   {isFollowing ? 'Unfollow' : 'Follow'}
                 </Button>
                 
