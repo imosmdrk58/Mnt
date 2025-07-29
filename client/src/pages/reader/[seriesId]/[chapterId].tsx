@@ -78,14 +78,14 @@ export default function Reader() {
 
   // Fetch all chapters for navigation
   const { data: allChapters = [] } = useQuery<Chapter[]>({
-    queryKey: ["/api/series", seriesId, "chapters"],
+    queryKey: [`/api/series/${seriesId}/chapters`],
     enabled: !!seriesId && isAuthenticated,
     retry: false,
   });
 
   // Fetch comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
-    queryKey: ["/api/chapters", chapterId, "comments"],
+    queryKey: [`/api/chapters/${chapterId}/comments`],
     enabled: !!chapterId && isAuthenticated,
     retry: false,
   });
@@ -122,7 +122,7 @@ export default function Reader() {
     },
     onSuccess: () => {
       setCommentText("");
-      queryClient.invalidateQueries({ queryKey: ["/api/chapters", chapterId, "comments"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chapters/${chapterId}/comments`] });
       toast({
         title: "Comment posted",
         description: "Your comment has been posted successfully!",

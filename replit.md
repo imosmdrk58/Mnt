@@ -121,16 +121,20 @@ The application uses PostgreSQL with the following key entities:
 
 ## Recent Changes
 
-**Series Detail Page Fixes (Current)**
+**Fixed Incorrect Data Fetching in Creator Series Management (Current)**
+- ✓ Database setup: Created PostgreSQL database and pushed schema tables for authentication and content management
+- ✓ Fixed React Query patterns: Updated series management page to use RESTful endpoints instead of query string parameters
+- ✓ Corrected API calls: Changed `/api/series?id=...` to `/api/series/${seriesId}` for individual series data
+- ✓ Updated chapter fetching: Fixed `/api/series?id=...&chapters` to `/api/series/${seriesId}/chapters`
+- ✓ Fixed cache invalidation: Updated all queryClient.invalidateQueries calls to use proper endpoint formats
+- ✓ Applied fixes across components: Updated series management, reader pages, and comment sections
+- ✓ Verified server startup: Application now runs successfully without database errors
+
+**Previous Series Detail Page Fixes**
 - ✓ Fixed authentication logic: Series pages load without requiring login (uses optionalAuth)
 - ✓ Corrected API endpoint calls: Now uses `/api/series/${id}/chapters` and `/api/series/${id}/reviews`
 - ✓ Enhanced null-safety: Fixed series.type.charAt(0) with proper conditional checks
-- ✓ Improved error handling: Added retry logic, loading states, and proper error boundaries
-- ✓ Fixed author display: Shows author usernames instead of [object Object]
-- ✓ Updated query cache invalidation: Uses correct API endpoint URLs for cache management
-- ✓ Enhanced user experience: Auth-required features show "Login to..." buttons for non-authenticated users
-- ✓ Verified data integrity: Series API returns complete data with populated author information
-- ✓ Fixed reader navigation: Uses correct series type for reader URLs
+- ✓ Fixed author display: Shows author usernames instead of [object Object] navigation: Uses correct series type for reader URLs
 
 **Database & Authentication Setup (Completed)**
 - ✓ PostgreSQL database fully configured with comprehensive table schema

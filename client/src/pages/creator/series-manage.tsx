@@ -38,13 +38,13 @@ export default function SeriesManage() {
 
   // Fetch series data
   const { data: series, isLoading: seriesLoading } = useQuery<Series & { author: any }>({
-    queryKey: ["/api/series", seriesId],
+    queryKey: [`/api/series/${seriesId}`],
     enabled: !!seriesId,
   });
 
   // Fetch chapters
   const { data: chapters = [], isLoading: chaptersLoading } = useQuery<Chapter[]>({
-    queryKey: ["/api/series", seriesId, "chapters"],
+    queryKey: [`/api/series/${seriesId}/chapters`],
     enabled: !!seriesId,
   });
 
@@ -59,7 +59,7 @@ export default function SeriesManage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/series", seriesId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/series/${seriesId}`] });
       toast({
         title: "Success",
         description: "Series updated successfully!",
@@ -84,7 +84,7 @@ export default function SeriesManage() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/series", seriesId, "chapters"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/series/${seriesId}/chapters`] });
       toast({
         title: "Success",
         description: "Chapter deleted successfully!",
