@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import SeriesGrid from "@/components/series/series-grid";
 import CreatorCard from "@/components/creator/creator-card";
@@ -75,8 +74,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         
         {/* Hero Section */}

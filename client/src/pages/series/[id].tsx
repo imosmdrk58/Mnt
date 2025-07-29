@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -249,7 +248,6 @@ export default function SeriesDetail() {
   if (seriesLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="animate-fade-in space-y-6">
             <Skeleton className="h-8 w-32" />
@@ -277,7 +275,6 @@ export default function SeriesDetail() {
   if (!series) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-foreground mb-4">Series Not Found</h1>
@@ -299,7 +296,6 @@ export default function SeriesDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         <div className="animate-fade-in">

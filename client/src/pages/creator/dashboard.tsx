@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import AnalyticsCard from "@/components/creator/analytics-card";
 import SeriesCard from "@/components/series/series-card";
@@ -73,7 +72,6 @@ export default function CreatorDashboard() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="animate-fade-in space-y-6">
             <Skeleton className="h-8 w-64" />
@@ -92,7 +90,6 @@ export default function CreatorDashboard() {
   if (!user.isCreator) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-foreground mb-4">Creator Access Required</h1>
@@ -143,7 +140,6 @@ export default function CreatorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         <div className="animate-fade-in space-y-8">

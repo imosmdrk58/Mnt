@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -299,7 +298,6 @@ export default function CreatorUpload() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-1/3"></div>
@@ -314,7 +312,6 @@ export default function CreatorUpload() {
   if (!user.isCreator) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="text-center py-12">
             <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -337,7 +334,6 @@ export default function CreatorUpload() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         <div className="animate-fade-in space-y-8">

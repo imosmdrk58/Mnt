@@ -25,7 +25,7 @@ import {
   LogOut,
 } from "lucide-react";
 
-export default function Navigation() {
+export function Navigation() {
   const [location] = useLocation();
   const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -42,33 +42,37 @@ export default function Navigation() {
   return (
     <nav className="sticky top-0 z-50 glassmorphism-dark backdrop-blur-lg border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-xl font-bold gradient-text">
-              StoryVerse
-            </span>
-          </Link>
-
-          {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
-            <form onSubmit={handleSearch} className="relative w-full">
-              <Input
-                type="text"
-                placeholder="Search series, creators, or genres..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 bg-background/50 border-border focus:border-primary"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            </form>
+        <div className="flex justify-center items-center h-16 relative">
+          {/* Logo - Positioned on left */}
+          <div className="absolute left-0 flex items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-xl font-bold gradient-text">
+                ContentHub
+              </span>
+            </Link>
           </div>
 
-          {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          {/* Centered Search Bar */}
+          <div className="flex-1 flex justify-center max-w-2xl mx-auto">
+            <div className="hidden md:flex w-full max-w-lg">
+              <form onSubmit={handleSearch} className="relative w-full">
+                <Input
+                  type="text"
+                  placeholder="Search series, creators, or genres..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 bg-background/50 border-border focus:border-primary"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              </form>
+            </div>
+          </div>
+
+          {/* User Actions - Positioned on right */}
+          <div className="absolute right-0 flex items-center space-x-4">
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -97,7 +101,7 @@ export default function Navigation() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.profileImageUrl} alt={user?.firstName || "User"} />
+                        <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || "User"} />
                         <AvatarFallback>
                           {user?.firstName?.[0] || user?.email?.[0] || "U"}
                         </AvatarFallback>

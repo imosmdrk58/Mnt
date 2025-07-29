@@ -1,4 +1,4 @@
-import { Navbar } from "./navbar";
+import { Navigation } from "./navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -7,7 +7,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navigation />
       <main>{children}</main>
     </div>
   );

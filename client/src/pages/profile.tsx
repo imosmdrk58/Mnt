@@ -5,7 +5,6 @@ import { useTheme } from "@/components/ui/theme-provider";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,7 +160,7 @@ export default function Profile() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-background">
-        <Navigation />
+
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
           <div className="animate-fade-in space-y-6">
             <div className="flex items-center space-x-4">
@@ -185,7 +184,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
         <div className="animate-fade-in space-y-8">
