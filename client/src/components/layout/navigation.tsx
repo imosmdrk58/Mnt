@@ -27,7 +27,7 @@ import {
 
 export default function Navigation() {
   const [location] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -144,18 +144,18 @@ export default function Navigation() {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => window.location.href = "/api/logout"}
-                    >
+                    <DropdownMenuItem onClick={logout} disabled={isLoggingOut}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Log out
+                      <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
-              <Button onClick={() => window.location.href = "/api/login"}>
-                Sign In
+              <Button asChild>
+                <Link href="/auth">
+                  Sign In
+                </Link>
               </Button>
             )}
           </div>

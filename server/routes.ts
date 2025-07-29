@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, requireAuth, optionalAuth } from "./auth";
 import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema } from "@shared/schema";
 import multer from 'multer';
 import path from 'path';
@@ -30,26 +30,14 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Auth middleware - setupAuth includes all auth routes
+  setupAuth(app);
 
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Series routes
-  app.get('/api/series', async (req, res) => {
+  // Public series routes (no auth required)
+  app.get('/api/series', optionalAuth, async (req, res) => {
     try {
       const { type, status, genre, limit } = req.query;
       const series = await storage.getSeriesList({
@@ -65,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/series/trending', async (req, res) => {
+  app.get('/api/series/trending', optionalAuth, async (req, res) => {
     try {
       const { limit } = req.query;
       const series = await storage.getTrendingSeries(limit ? parseInt(limit as string) : 10);
@@ -90,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/series/:id', async (req, res) => {
+  app.get('/api/series/:id', optionalAuth, async (req, res) => {
     try {
       const series = await storage.getSeries(req.params.id);
       if (!series) {
@@ -103,9 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/series', isAuthenticated, upload.single('coverImage'), async (req: any, res) => {
+  app.post('/api/series', requireAuth, upload.single('coverImage'), async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Validate input
       const seriesData = insertSeriesSchema.parse({
@@ -124,8 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chapter routes
-  app.get('/api/series/:seriesId/chapters', async (req, res) => {
+  // Public chapter routes (no auth required for reading)
+  app.get('/api/series/:seriesId/chapters', optionalAuth, async (req, res) => {
     try {
       const chapters = await storage.getChaptersBySeriesId(req.params.seriesId);
       res.json(chapters);
@@ -135,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/chapters/:id', async (req, res) => {
+  app.get('/api/chapters/:id', optionalAuth, async (req, res) => {
     try {
       const chapter = await storage.getChapter(req.params.id);
       if (!chapter) {
@@ -148,9 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/series/:seriesId/chapters', isAuthenticated, upload.array('pages', 50), async (req: any, res) => {
+  app.post('/api/series/:seriesId/chapters', requireAuth, upload.array('pages', 50), async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify user owns the series
       const series = await storage.getSeries(req.params.seriesId);
@@ -184,8 +172,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Comment routes
-  app.get('/api/chapters/:chapterId/comments', async (req, res) => {
+  // Public comment routes (no auth required for viewing)
+  app.get('/api/chapters/:chapterId/comments', optionalAuth, async (req, res) => {
     try {
       const comments = await storage.getCommentsByChapterId(req.params.chapterId);
       res.json(comments);
@@ -195,9 +183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/chapters/:chapterId/comments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/chapters/:chapterId/comments', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const commentData = insertCommentSchema.parse({
         ...req.body,
@@ -213,8 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Review routes
-  app.get('/api/series/:seriesId/reviews', async (req, res) => {
+  // Public review routes (no auth required for viewing)
+  app.get('/api/series/:seriesId/reviews', optionalAuth, async (req, res) => {
     try {
       const reviews = await storage.getReviewsBySeriesId(req.params.seriesId);
       res.json(reviews);
@@ -224,9 +212,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/series/:seriesId/reviews', isAuthenticated, async (req: any, res) => {
+  app.post('/api/series/:seriesId/reviews', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       const reviewData = insertReviewSchema.parse({
         ...req.body,
@@ -243,10 +231,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Follow routes
-  app.post('/api/follow', isAuthenticated, async (req: any, res) => {
+  // Protected follow routes (require auth)
+  app.post('/api/follow', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { targetId, targetType } = req.body;
       
       if (!targetId || !targetType) {
@@ -261,9 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/follow', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/follow', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { targetId, targetType } = req.body;
       
       if (!targetId || !targetType) {
@@ -278,9 +266,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/followed-series', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/followed-series', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const series = await storage.getFollowedSeries(userId);
       res.json(series);
     } catch (error) {
@@ -289,10 +277,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bookmark routes
-  app.post('/api/bookmarks', isAuthenticated, async (req: any, res) => {
+  // Protected bookmark routes (require auth)
+  app.post('/api/bookmarks', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { seriesId } = req.body;
       
       if (!seriesId) {
@@ -307,9 +295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/bookmarks/:seriesId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/bookmarks/:seriesId', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       await storage.deleteBookmark(userId, req.params.seriesId);
       res.status(204).send();
     } catch (error) {
@@ -318,9 +306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/bookmarks', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/bookmarks', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const series = await storage.getBookmarkedSeries(userId);
       res.json(series);
     } catch (error) {
@@ -329,10 +317,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reading progress routes
-  app.put('/api/reading-progress', isAuthenticated, async (req: any, res) => {
+  // Protected reading progress routes (require auth)
+  app.put('/api/reading-progress', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { seriesId, chapterId, progress } = req.body;
       
       if (!seriesId || !chapterId || progress === undefined) {
@@ -347,9 +335,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/reading-progress/:seriesId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/reading-progress/:seriesId', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const progress = await storage.getReadingProgress(userId, req.params.seriesId);
       res.json(progress);
     } catch (error) {
@@ -358,10 +346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Creator routes
-  app.get('/api/creator/series', isAuthenticated, async (req: any, res) => {
+  // Protected creator routes (require auth)
+  app.get('/api/creator/series', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const series = await storage.getSeriesByAuthor(userId);
       res.json(series);
     } catch (error) {
@@ -370,9 +358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/creator/analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/creator/analytics', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const analytics = await storage.getCreatorAnalytics(userId);
       res.json(analytics);
     } catch (error) {
@@ -381,10 +369,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Transaction routes
-  app.get('/api/user/transactions', isAuthenticated, async (req: any, res) => {
+  // Protected transaction routes (require auth)
+  app.get('/api/user/transactions', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const transactions = await storage.getUserTransactions(userId);
       res.json(transactions);
     } catch (error) {

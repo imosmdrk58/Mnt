@@ -26,10 +26,11 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -37,6 +38,9 @@ export const users = pgTable("users", {
   isCreator: boolean("is_creator").default(false),
   isEliteReader: boolean("is_elite_reader").default(false),
   followersCount: integer("followers_count").default(0),
+  emailVerified: boolean("email_verified").default(false),
+  resetToken: varchar("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -252,6 +256,21 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+export const registerUserSchema = insertUserSchema.pick({
+  email: true,
+  password: true,
+  firstName: true,
+  lastName: true,
+}).extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email("Invalid email address"),
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
 export const insertSeriesSchema = createInsertSchema(series).omit({
   id: true,
   createdAt: true,
@@ -279,6 +298,9 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type Series = typeof series.$inferSelect;
 export type InsertSeries = z.infer<typeof insertSeriesSchema>;
 export type Chapter = typeof chapters.$inferSelect;
