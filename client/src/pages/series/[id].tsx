@@ -32,7 +32,7 @@ import {
   ArrowLeft,
   UserPlus,
 } from "lucide-react";
-import type { Series, Chapter, Review, Comment } from "@shared/schema";
+import type { Series, Chapter, Review, Comment, User } from "@shared/schema";
 
 export default function SeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -60,19 +60,14 @@ export default function SeriesDetail() {
     }
   }, [isAuthenticated, user, toast]);
 
-  // Fetch series data
-  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
+  // Fetch series data (includes author information)
+  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series & { author: User }>({
     queryKey: ["/api/series", id],
     enabled: !!id && isAuthenticated !== false,
     retry: false,
   });
 
-  // Fetch author data when series is loaded
-  const { data: author, error: authorError } = useQuery({
-    queryKey: ["/api/users", series?.authorId],
-    enabled: !!series?.authorId && isAuthenticated !== false,
-    retry: false,
-  });
+  // Author data is included with series data, no separate fetch needed
 
   // Fetch chapters
   const { data: chapters = [], isLoading: chaptersLoading, error: chaptersError } = useQuery<Chapter[]>({
@@ -81,8 +76,8 @@ export default function SeriesDetail() {
     retry: false,
   });
 
-  // Fetch reviews
-  const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery<Review[]>({
+  // Fetch reviews (includes user information)
+  const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery<(Review & { user: User })[]>({
     queryKey: ["/api/series", id, "reviews"],
     enabled: !!id && isAuthenticated !== false,
     retry: false,
@@ -365,7 +360,7 @@ export default function SeriesDetail() {
             <div className="md:col-span-2 space-y-6">
               <div>
                 <div className="flex items-center space-x-2 mb-2">
-                  <Badge className={getTypeColor(series.type)}>
+                  <Badge className={getTypeColor(series.type || '')}>
                     {series.type ? series.type.charAt(0).toUpperCase() + series.type.slice(1) : "Unknown"}
                   </Badge>
                   <Badge variant="outline">
@@ -383,7 +378,7 @@ export default function SeriesDetail() {
                     onClick={() => navigate(`/user/${series.authorId}`)}
                     className="text-primary hover:text-primary/80 font-medium hover:underline"
                   >
-                    {series.author?.username || series.author?.firstName || author?.username || "Unknown Author"}
+                    {series.author?.username || series.author?.creatorDisplayName || series.author?.firstName || "Unknown Author"}
                   </button>
                 </p>
                 

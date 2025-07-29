@@ -178,8 +178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Remove sensitive information
-      const { password, ...safeUser } = user;
+      // Remove sensitive information including email for privacy
+      const { password, email, resetToken, resetTokenExpiry, ...safeUser } = user;
       res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);

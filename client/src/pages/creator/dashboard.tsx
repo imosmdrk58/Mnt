@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import MobileNav from "@/components/layout/mobile-nav";
 import AnalyticsCard from "@/components/creator/analytics-card";
 import UnifiedSeriesCard from "@/components/ui/unified-series-card";
-import SeriesCard from "@/components/series/series-card";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,37 +108,12 @@ export default function CreatorDashboard() {
     );
   }
 
-  // Mock recent activity data
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'comment',
-      message: 'New comment on "Mystic Academy - Chapter 24"',
-      timestamp: '2 hours ago',
-      icon: MessageCircle,
-    },
-    {
-      id: '2',
-      type: 'view',
-      message: 'Your series gained 250 new views today',
-      timestamp: '4 hours ago',
-      icon: Eye,
-    },
-    {
-      id: '3',
-      type: 'follower',
-      message: '15 new followers this week',
-      timestamp: '1 day ago',
-      icon: Users,
-    },
-    {
-      id: '4',
-      type: 'rating',
-      message: 'New 5-star review on "Dark Chronicles"',
-      timestamp: '2 days ago',
-      icon: Star,
-    },
-  ];
+  // Fetch recent activity data
+  const { data: recentActivity = [] } = useQuery({
+    queryKey: ["/api/creator/activity"],
+    enabled: isAuthenticated && !!user,
+    retry: false,
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -243,17 +218,9 @@ export default function CreatorDashboard() {
               ) : creatorSeries.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {creatorSeries.map((series) => (
-                    <SeriesCard
+                    <UnifiedSeriesCard
                       key={series.id}
-                      id={series.id}
-                      title={series.title}
-                      author={user.firstName || user.email || 'You'}
-                      coverImageUrl={series.coverImageUrl || undefined}
-                      type={series.type}
-                      status={series.status || 'ongoing'}
-                      rating={parseFloat(series.rating || '0')}
-                      chapterCount={series.chapterCount || 0}
-                      viewCount={series.viewCount || 0}
+                      series={series}
                       onClick={() => handleSeriesClick(series.id)}
                     />
                   ))}
@@ -326,24 +293,31 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentActivity.map((activity) => {
-                      const IconComponent = activity.icon;
-                      return (
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity: any) => (
                         <div key={activity.id} className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
                           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <IconComponent className="w-5 h-5 text-primary" />
+                            <MessageCircle className="w-5 h-5 text-primary" />
                           </div>
                           <div className="flex-1">
                             <p className="text-sm text-foreground">
-                              {activity.message}
+                              {activity.message || "Activity update"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {activity.timestamp}
+                              {activity.timestamp || "Recently"}
                             </p>
                           </div>
                         </div>
-                      );
-                    })}
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No recent activity.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Activity will appear here as you publish content and engage with readers.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -191,7 +191,6 @@ export class DatabaseStorage implements IStorage {
         author: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -199,9 +198,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -213,7 +209,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(series)
@@ -265,7 +260,6 @@ export class DatabaseStorage implements IStorage {
         author: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -273,9 +267,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -287,7 +278,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(series)
@@ -343,7 +333,6 @@ export class DatabaseStorage implements IStorage {
         author: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -351,9 +340,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -365,7 +351,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(series)
@@ -414,7 +399,6 @@ export class DatabaseStorage implements IStorage {
         author: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -422,9 +406,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -436,7 +417,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(series)
@@ -471,7 +451,6 @@ export class DatabaseStorage implements IStorage {
         author: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -479,9 +458,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -493,7 +469,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(series)
@@ -631,7 +606,6 @@ export class DatabaseStorage implements IStorage {
         user: {
           id: users.id,
           username: users.username,
-          email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
           profileImageUrl: users.profileImageUrl,
@@ -639,9 +613,6 @@ export class DatabaseStorage implements IStorage {
           isCreator: users.isCreator,
           isEliteReader: users.isEliteReader,
           followersCount: users.followersCount,
-          emailVerified: users.emailVerified,
-          resetToken: users.resetToken,
-          resetTokenExpiry: users.resetTokenExpiry,
           creatorDisplayName: users.creatorDisplayName,
           creatorBio: users.creatorBio,
           creatorPortfolioUrl: users.creatorPortfolioUrl,
@@ -653,7 +624,6 @@ export class DatabaseStorage implements IStorage {
           creatorApplicationDate: users.creatorApplicationDate,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
-          password: users.password,
         }
       })
       .from(reviews)

@@ -79,19 +79,21 @@ export default function UnifiedSeriesCard({
             </div>
           )}
           
-          {/* Type Badge - Glassmorphism style */}
+          {/* Type Badge - Only show series type on covers */}
           <div className="absolute top-2 left-2">
             <Badge className={`${getTypeColor(series.type || 'unknown')} backdrop-blur-sm bg-opacity-90 shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:shadow-xl transition-all duration-200`}>
               {series.type ? series.type.charAt(0).toUpperCase() + series.type.slice(1) : "Unknown"}
             </Badge>
           </div>
-          
-          {/* Status Badge - Glassmorphism style */}
-          <div className="absolute top-2 right-2">
-            <Badge className="backdrop-blur-md bg-white/20 text-white border-white/30 border rounded-full px-3 py-1 font-semibold text-xs shadow-lg hover:bg-white/30 hover:shadow-xl transition-all duration-200">
-              {series.status ? series.status.charAt(0).toUpperCase() + series.status.slice(1) : "Unknown"}
-            </Badge>
-          </div>
+
+          {/* NSFW Badge if applicable */}
+          {series.isNSFW && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="destructive" className="rounded-full px-3 py-1 text-xs font-semibold">
+                18+
+              </Badge>
+            </div>
+          )}
 
           {/* Hover Actions */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -136,7 +138,7 @@ export default function UnifiedSeriesCard({
         
         {/* Author */}
         <p className="text-xs text-muted-foreground truncate">
-          by {series.author?.username || series.author?.firstName || "Unknown"}
+          by {series.author?.username || series.author?.firstName || series.author?.creatorDisplayName || "Unknown"}
         </p>
       </div>
     </Card>
