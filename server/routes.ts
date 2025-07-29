@@ -7,6 +7,7 @@ import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertRev
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import sharp from 'sharp';
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -204,8 +205,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process and resize cover image
       let coverImageUrl = null;
       if (req.file) {
-        const sharp = require('sharp');
-        const path = require('path');
         const resizedFilename = `resized_${req.file.filename}`;
         const resizedPath = path.join('uploads', resizedFilename);
         
@@ -572,34 +571,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `${coinAmount} Coins`,
-                description: `Purchase ${coinAmount} coins for premium content`,
-              },
-              unit_amount: Math.round(amount * 100), // Convert to cents
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: `${req.headers.origin}/coins?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.origin}/coins?canceled=true`,
-        metadata: {
-          userId: req.user.id,
-          packageId,
-          coinAmount: coinAmount.toString(),
-        },
-      });
-
-      res.json({ sessionId: session.id });
+      // Stripe functionality temporarily disabled
+      return res.status(501).json({ message: "Payment functionality not implemented yet" });
     } catch (error) {
       console.error("Error creating checkout session:", error);
       res.status(500).json({ message: "Failed to create checkout session" });
@@ -616,30 +589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Session ID required" });
       }
 
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-      if (session.payment_status === 'paid' && session.metadata.userId === userId) {
-        const coinAmount = parseInt(session.metadata.coinAmount);
-        
-        // Create transaction record
-        const transaction = await storage.createTransaction({
-          userId,
-          amount: coinAmount,
-          type: 'purchase',
-          description: `Purchased ${coinAmount} coins`,
-          chapterId: null,
-        });
-
-        res.json({ 
-          success: true, 
-          transaction,
-          coinAmount,
-          message: "Payment confirmed and coins credited!" 
-        });
-      } else {
-        res.status(400).json({ message: "Payment not completed or invalid" });
-      }
+      // Stripe functionality temporarily disabled
+      return res.status(501).json({ message: "Payment confirmation not implemented yet" });
     } catch (error) {
       console.error("Error confirming payment:", error);
       res.status(500).json({ message: "Failed to confirm payment" });

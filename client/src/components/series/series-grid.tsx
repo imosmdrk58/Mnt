@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import SeriesCard from "./series-card";
+import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Series } from "@shared/schema";
 import type { FilterOptions } from "@/types";
@@ -71,21 +71,9 @@ export default function SeriesGrid({
               </div>
             ))
           : series.map((item) => (
-              <SeriesCard
+              <UnifiedSeriesCard
                 key={item.id}
-                id={item.id}
-                title={item.title}
-                author={item.authorId} // This should be populated with actual author name
-                coverImageUrl={item.coverImageUrl || undefined}
-                type={item.type}
-                status={item.status || 'ongoing'}
-                rating={parseFloat(item.rating || '0')}
-                chapterCount={item.chapterCount || 0}
-                viewCount={item.viewCount || 0}
-                isNew={!item.createdAt ? false : new Date(item.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000}
-                isPremium={false} // Can be determined based on chapters
-                isHot={trending && (item.viewCount || 0) > 10000}
-                isCompleted={item.status === 'completed'}
+                series={item}
                 onClick={() => handleSeriesClick(item.id)}
               />
             ))}

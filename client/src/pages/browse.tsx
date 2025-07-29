@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { SeriesCard } from "@/components/ui/series-card";
+import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import type { Series } from "@shared/schema";
 
 export default function Browse() {
@@ -218,10 +218,9 @@ export default function Browse() {
                   : "space-y-4"
               }>
                 {filteredSeries.map((series) => (
-                  <SeriesCard
+                  <UnifiedSeriesCard
                     key={series.id}
                     series={series}
-                    layout={viewMode}
                   />
                 ))}
               </div>
@@ -255,7 +254,7 @@ export default function Browse() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {trendingSeries.map((series, index) => (
                 <div key={series.id} className="relative">
-                  <SeriesCard series={series} />
+                  <UnifiedSeriesCard series={series} />
                   <Badge 
                     className="absolute -top-2 -left-2 bg-primary text-primary-foreground"
                   >

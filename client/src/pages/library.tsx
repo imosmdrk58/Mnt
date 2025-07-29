@@ -63,7 +63,7 @@ export default function Library() {
   });
 
   // Fetch user transactions for purchase history
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<any[]>({
     queryKey: ["/api/user/transactions"],
     enabled: isAuthenticated && !!user,
     retry: false,
@@ -107,10 +107,10 @@ export default function Library() {
 
   // Calculate reading stats
   const totalSeries = bookmarkedSeries.length;
-  const totalChaptersRead = transactions.filter(t => t.type === 'unlock').length;
+  const totalChaptersRead = transactions.filter((t: any) => t.type === 'unlock').length;
   const coinsSpent = transactions
-    .filter(t => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    .filter((t: any) => t.amount < 0)
+    .reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
 
   if (authLoading || !user) {
     return (
@@ -457,7 +457,7 @@ export default function Library() {
                     </div>
                   ) : transactions.length > 0 ? (
                     <div className="space-y-4">
-                      {transactions.slice(0, 10).map((transaction) => (
+                      {transactions.slice(0, 10).map((transaction: any) => (
                         <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <div className="w-2 h-2 bg-primary rounded-full"></div>

@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import MobileNav from "@/components/layout/mobile-nav";
 import AnalyticsCard from "@/components/creator/analytics-card";
-import SeriesCard from "@/components/series/series-card";
+import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

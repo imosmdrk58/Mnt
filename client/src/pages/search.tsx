@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { SeriesCard } from "@/components/ui/series-card";
+import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Search, 
@@ -201,7 +201,7 @@ export default function SearchPage() {
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                           {searchResults.series.slice(0, 8).map((series) => (
-                            <SeriesCard key={series.id} series={series} />
+                            <UnifiedSeriesCard key={series.id} series={series} />
                           ))}
                         </div>
                       </section>
@@ -272,7 +272,7 @@ export default function SearchPage() {
                     {searchResults?.series && searchResults.series.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {searchResults.series.map((series) => (
-                          <SeriesCard key={series.id} series={series} />
+                          <UnifiedSeriesCard key={series.id} series={series} />
                         ))}
                       </div>
                     ) : (

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SeriesCard } from "@/components/ui/series-card";
+import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, TrendingUp, Users, Star, Crown, Eye, BookOpen } from "lucide-react";
 import type { Series, User } from "@shared/schema";
@@ -88,7 +88,7 @@ export default function Trending() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {trendingSeries.slice(0, 8).map((series, index) => (
                     <div key={series.id} className="relative">
-                      <SeriesCard series={series} />
+                      <UnifiedSeriesCard series={series} />
                       <Badge 
                         className="absolute -top-2 -left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0"
                       >
@@ -181,7 +181,7 @@ export default function Trending() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {risingSeries.map((series) => (
                     <div key={series.id} className="relative">
-                      <SeriesCard series={series} />
+                      <UnifiedSeriesCard series={series} />
                       <Badge 
                         className="absolute top-2 left-2 bg-green-500 text-white border-0"
                       >

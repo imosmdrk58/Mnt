@@ -339,10 +339,10 @@ export default function SeriesDetail() {
               <div>
                 <div className="flex items-center space-x-2 mb-2">
                   <Badge className={getTypeColor(series.type)}>
-                    {series.type.charAt(0).toUpperCase() + series.type.slice(1)}
+                    {series.type ? series.type.charAt(0).toUpperCase() + series.type.slice(1) : "Unknown"}
                   </Badge>
                   <Badge variant="outline">
-                    {series.status?.charAt(0).toUpperCase() + series.status?.slice(1)}
+                    {series.status ? series.status.charAt(0).toUpperCase() + series.status.slice(1) : "Unknown"}
                   </Badge>
                 </div>
                 
