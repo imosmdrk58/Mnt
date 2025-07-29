@@ -74,7 +74,6 @@ export default function Home() {
                   backgroundPosition: 'center',
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
               <div className="relative h-full flex items-center justify-start pl-8 md:pl-16">
                 <div className="max-w-lg">
                   <div className="comic-bubble bg-accent text-accent-foreground px-4 py-2 rounded-lg inline-block mb-4">
