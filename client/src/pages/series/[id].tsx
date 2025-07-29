@@ -39,55 +39,65 @@ export default function SeriesDetail() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+
+  // Validate series ID
+  if (!id || id === '[object Object]') {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacing">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Invalid Series ID</h1>
+            <p className="text-muted-foreground mb-6">
+              The series identifier is invalid. Please check the URL.
+            </p>
+            <Button onClick={() => navigate("/")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [commentText, setCommentText] = useState("");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Redirect to home if not authenticated
-  useEffect(() => {
-    if (isAuthenticated === false && !user) {
-      toast({
-        title: "Unauthorized",
-        description: "You need to log in to view series details.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, user, toast]);
+  // Series can be viewed without authentication, but some features require auth
+  // No redirect needed since API uses optionalAuth
 
-  // Fetch series data (includes author information)
+  // Fetch series data (includes author information) - works without auth
   const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series & { author: User }>({
     queryKey: ["/api/series", id],
-    enabled: !!id && isAuthenticated !== false,
-    retry: false,
+    enabled: !!id,
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Author data is included with series data, no separate fetch needed
 
-  // Fetch chapters
+  // Fetch chapters - works without auth
   const { data: chapters = [], isLoading: chaptersLoading, error: chaptersError } = useQuery<Chapter[]>({
     queryKey: ["/api/series", id, "chapters"],
-    enabled: !!id && isAuthenticated !== false,
-    retry: false,
+    enabled: !!id,
+    retry: 2,
   });
 
-  // Fetch reviews (includes user information)
+  // Fetch reviews (includes user information) - works without auth
   const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery<(Review & { user: User })[]>({
     queryKey: ["/api/series", id, "reviews"],
-    enabled: !!id && isAuthenticated !== false,
-    retry: false,
+    enabled: !!id,
+    retry: 2,
   });
 
-  // Fetch reading progress
+  // Fetch reading progress - requires auth
   const { data: readingProgress, error: progressError } = useQuery({
     queryKey: ["/api/reading-progress", id],
-    enabled: !!id && isAuthenticated !== false,
-    retry: false,
+    enabled: !!id && isAuthenticated === true,
+    retry: 1,
   });
 
   // Bookmark mutation
@@ -170,9 +180,12 @@ export default function SeriesDetail() {
     },
   });
 
-  // Review mutation
+  // Review mutation - requires authentication
   const reviewMutation = useMutation({
     mutationFn: async () => {
+      if (!isAuthenticated) {
+        throw new Error("Authentication required");
+      }
       await apiRequest("POST", `/api/series/${id}/reviews`, {
         rating: reviewRating,
         content: reviewText,
@@ -188,15 +201,15 @@ export default function SeriesDetail() {
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
+      if (isUnauthorizedError(error) || error.message === "Authentication required") {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Login Required",
+          description: "Please log in to submit a review.",
           variant: "destructive",
         });
         setTimeout(() => {
           window.location.href = "/api/login";
-        }, 500);
+        }, 1500);
         return;
       }
       toast({
@@ -439,25 +452,47 @@ export default function SeriesDetail() {
                   {progressPercentage > 0 ? 'Continue Reading' : 'Start Reading'}
                 </Button>
                 
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => bookmarkMutation.mutate()}
-                  disabled={bookmarkMutation.isPending}
-                >
-                  <Bookmark className="w-5 h-5 mr-2" />
-                  {isBookmarked ? 'Remove from Library' : 'Add to Library'}
-                </Button>
+                {isAuthenticated ? (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => bookmarkMutation.mutate()}
+                    disabled={bookmarkMutation.isPending}
+                  >
+                    <Bookmark className="w-5 h-5 mr-2" />
+                    {bookmarkMutation.isPending ? 'Updating...' : (isBookmarked ? 'Remove from Library' : 'Add to Library')}
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => window.location.href = "/api/login"}
+                  >
+                    <Bookmark className="w-5 h-5 mr-2" />
+                    Login to Bookmark
+                  </Button>
+                )}
                 
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => followMutation.mutate()}
-                  disabled={followMutation.isPending}
-                >
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  {isFollowing ? 'Unfollow' : 'Follow'}
-                </Button>
+                {isAuthenticated ? (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => followMutation.mutate()}
+                    disabled={followMutation.isPending}
+                  >
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    {followMutation.isPending ? 'Updating...' : (isFollowing ? 'Unfollow' : 'Follow')}
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={() => window.location.href = "/api/login"}
+                  >
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    Login to Follow
+                  </Button>
+                )}
                 
                 <Button variant="outline" size="lg">
                   <Share2 className="w-5 h-5 mr-2" />
@@ -606,12 +641,21 @@ export default function SeriesDetail() {
                       />
                     </div>
                     
-                    <Button 
-                      onClick={() => reviewMutation.mutate()}
-                      disabled={reviewMutation.isPending || !reviewText.trim()}
-                    >
-                      Submit Review
-                    </Button>
+                    {isAuthenticated ? (
+                      <Button 
+                        onClick={() => reviewMutation.mutate()}
+                        disabled={reviewMutation.isPending || !reviewText.trim()}
+                      >
+                        {reviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => window.location.href = "/api/login"}
+                        variant="outline"
+                      >
+                        Login to Submit Review
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
