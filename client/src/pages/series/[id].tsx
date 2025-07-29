@@ -226,7 +226,7 @@ export default function SeriesDetail() {
 
   // Share functionality with various platforms
   const shareUrl = window.location.origin + `/series/${id}`;
-  const shareText = `Check out "${series.title}" by @${series.author?.username}`;
+  const shareText = series ? `Check out "${series.title}" by @${series.author?.username || 'Unknown Author'}` : `Check out this series`;
 
   const handleShare = async (platform?: string) => {
     if (platform === 'copy' || !platform) {
@@ -260,7 +260,7 @@ export default function SeriesDetail() {
     } else if (platform === 'native' && navigator.share) {
       try {
         await navigator.share({
-          title: series.title,
+          title: series?.title || 'Series',
           text: shareText,
           url: shareUrl,
         });
@@ -819,7 +819,7 @@ export default function SeriesDetail() {
       <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share "{series.title}"</DialogTitle>
+            <DialogTitle>Share "{series?.title || 'Series'}"</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
