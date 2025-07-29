@@ -85,7 +85,7 @@ export default function Trending() {
                   <h2 className="text-2xl font-bold">Top Trending Series</h2>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
                   {trendingSeries.slice(0, 8).map((series, index) => (
                     <div key={series.id} className="relative">
                       <UnifiedSeriesCard series={series} />
@@ -178,7 +178,7 @@ export default function Trending() {
                   <Badge variant="outline" className="ml-2">New & Growing</Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
                   {risingSeries.map((series) => (
                     <div key={series.id} className="relative">
                       <UnifiedSeriesCard series={series} />

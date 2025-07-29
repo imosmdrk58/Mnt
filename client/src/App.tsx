@@ -23,6 +23,8 @@ import CoinsPage from "@/pages/coins";
 import SearchPage from "@/pages/search";
 import UserProfilePage from "@/pages/user/[id]";
 import CreateChapter from "@/pages/creator/create-chapter";
+import SeriesManage from "@/pages/creator/series-manage";
+import SeriesCreateChapter from "@/pages/creator/series-create-chapter";
 
 function Router() {
   return (
@@ -70,9 +72,14 @@ function Router() {
             <CreatorAnalytics />
           </ProtectedRoute>
         </Route>
+        <Route path="/creator/series/:seriesId/manage">
+          <ProtectedRoute>
+            <SeriesManage />
+          </ProtectedRoute>
+        </Route>
         <Route path="/creator/series/:seriesId/create-chapter">
           <ProtectedRoute>
-            <CreateChapter />
+            <SeriesCreateChapter />
           </ProtectedRoute>
         </Route>
         

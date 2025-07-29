@@ -68,7 +68,7 @@ export default function CreatorDashboard() {
   };
 
   const handleSeriesClick = (seriesId: string) => {
-    navigate(`/series/${seriesId}`);
+    navigate(`/creator/series/${seriesId}/manage`);
   };
 
   if (authLoading || !user) {
