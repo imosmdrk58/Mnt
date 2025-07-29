@@ -17,6 +17,7 @@ import Library from "@/pages/library";
 import Profile from "@/pages/profile";
 import BecomeCreator from "@/pages/become-creator";
 import Browse from "@/pages/browse";
+import Trending from "@/pages/trending";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
         {/* Public routes accessible to all users */}
         <Route path="/" component={Home} />
         <Route path="/browse" component={Browse} />
+        <Route path="/trending" component={Trending} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />

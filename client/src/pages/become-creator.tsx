@@ -61,11 +61,11 @@ export default function BecomeCreator() {
     },
     onSuccess: () => {
       toast({
-        title: "Application submitted!",
-        description: "We'll review your application and get back to you within 24-48 hours.",
+        title: "Welcome to the Creator Program!",
+        description: "Your application has been approved! You now have access to the Creator Dashboard.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      setLocation("/profile");
+      setLocation("/creator/dashboard");
     },
     onError: (error: Error) => {
       toast({

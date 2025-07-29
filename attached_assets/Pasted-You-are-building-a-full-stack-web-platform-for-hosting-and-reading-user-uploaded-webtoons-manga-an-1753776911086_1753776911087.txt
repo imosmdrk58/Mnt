@@ -1,0 +1,178 @@
+You are building a full-stack web platform for hosting and reading user-uploaded webtoons, manga, and novels — inspired by Webtoon, MangaDex, and Tapas — with a powerful creator dashboard, advanced reader, dynamic recommendation systems, and interactive user experience.
+
+🔧 SYSTEM CORE (DATA, ROUTES, AND AUTH)
+❌ No mock data anywhere — All visible content (series, user badges, groups, creator spotlights, comments, etc.) must come from real-time, backend-connected data (e.g., MongoDB, PostgreSQL).
+
+✅ All routes must be real: Ensure every view pulls data dynamically (e.g., /group/:id, /series/:id, /user/:id).
+
+✅ Fully working custom auth system:
+
+Use secure custom email/password login (not Replit Auth).
+
+Fully functional Login / Register forms with error handling and validation.
+
+JWT or session-based login persistence.
+
+Support role-based access (e.g., admin, reader, author).
+
+"Become a Creator" flow must auto-approve and update user's role instantly, removing the CTA and replacing with Creator Dashboard access.
+
+🎨 UI/UX ENHANCEMENTS
+🔘 Add Lucide/FontAwesome icons to navbar links (e.g., circle-plus for "Create", flame for "Trending", book-open for "Library") to visually enrich the interface.
+
+🏷️ Add dynamic role badges next to username (e.g., Reader, Author, Admin, Elite Reader) visible on the user profile and in comments.
+
+🧑‍🎨 Creator Dashboard should appear immediately after becoming a creator and only for approved authors.
+
+🌘 Maintain clean, responsive design across light/dark themes.
+
+📖 READING FEATURES
+📈 Reading streak system must use real database-tracked reading activity (not mock counters).
+
+Track per-user chapter reads by date.
+
+Auto-reset after inactivity.
+
+Show weekly progress stats and streak badge.
+
+📑 Save reading progress per chapter per user in the backend.
+
+🔖 Bookmark folders + tag system (real-time stored, editable).
+
+🧠 Reading goals (e.g., “Read 20 chapters this week”) — fully functional and tracked.
+
+💬 USER INTERACTIONS
+✅ Real-time comment system per chapter.
+
+❤️‍🔥 Emoji reactions (🔥, 😂, 😭, ❤️) per chapter (real-time database counts).
+
+⭐ Series reviews (5-star + text) — editable and stored per user.
+
+⚠️ Report system: flag comments/chapters/authors, tied to moderation panel.
+
+🧑‍🤝‍🧑 GROUP SYSTEM (NO MOCK)
+Create, join, and manage groups (e.g., translation or creator collectives).
+
+Each group must support:
+
+Group page with banner, logo, about section.
+
+Group roles: Owner, Editor, Contributor.
+
+Member management (invite, kick, promote).
+
+Real chat or comment thread per group.
+
+Show group’s uploaded series on profile.
+
+Groups must appear in Creator Spotlight if trending.
+
+🧑‍💼 CREATOR SYSTEM
+💼 Real creator dashboard:
+
+Upload chapters (images for comics, markdown for novels).
+
+Track:
+
+Follower growth
+
+Views
+
+Likes
+
+Revenue (from coins)
+
+Ad impressions and CTR
+
+Chapter scheduling support.
+
+🧾 Author/series reports and moderation panel.
+
+💸 COIN MONETIZATION SYSTEM
+Users buy coins via Stripe or similar.
+
+Creators price chapters with:
+
+Coin per chapter
+
+Early access (release delay for free)
+
+Unlock-all Fast Pass
+
+Refund coins if chapter is deleted.
+
+Ad revenue system (chapter-based):
+
+Creators opt-in per chapter.
+
+Track revenue per chapter.
+
+🧠 DISCOVERY SYSTEM
+Home has real-time smart carousels:
+
+Trending
+
+Rising
+
+Staff Picks
+
+Recently Updated
+
+Creator Spotlight (users/groups)
+
+Smart sorting based on:
+
+Read history
+
+Genre preference
+
+Followed groups/authors
+
+🎖️ BADGES & SPOTLIGHTS (DYNAMIC)
+🔰 Auto-assigned and real:
+
+Elite Reader (read or unlock 50+ chapters).
+
+Staff Pick (manually assignable by admin).
+
+Rising (auto assigned at 1000+ followers or 5k views).
+
+Show badges on series, user profiles, and comments.
+
+Featured in Spotlight components.
+
+👑 ADMIN PANEL
+🔧 Admins can:
+
+Moderate reports, delete content.
+
+Assign/remove badges.
+
+Manage ad system globally.
+
+Ban/unban users/groups.
+
+Approve future creator applications.
+
+Manage spotlight entries.
+
+📦 BACKEND & STACK RECOMMENDATIONS (OPTIONAL)
+Frontend: Next.js with Tailwind, Zustand/AuthContext for state.
+
+Backend: Express.js + MongoDB or Prisma + PostgreSQL.
+
+Auth: JWT (access + refresh), bcrypt for password hashing.
+
+Storage: S3-compatible for image uploads.
+
+Real-time: Socket.io for chat/notifications.
+
+Payments: Stripe for coins.
+
+Deployment: Vercel + Render or Docker-based full stack.
+
+TL;DR REQUIREMENTS
+Replace all mock systems with real connected features.
+Fix creator flow (auto-approve, dashboard access).
+Add icons to navbar, badges to users, real data everywhere.
+Dynamic badges, group visibility in spotlight, full creator + reader engagement.

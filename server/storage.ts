@@ -50,7 +50,9 @@ export interface IStorage {
   createSeries(series: InsertSeries): Promise<Series>;
   updateSeries(id: string, updates: Partial<InsertSeries>): Promise<Series>;
   getSeriesByAuthor(authorId: string): Promise<Series[]>;
-  getTrendingSeries(limit?: number): Promise<Series[]>;
+  getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]>;
+  getRisingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]>;
+  getTrendingCreators(filters?: { timeframe?: string; limit?: number }): Promise<User[]>;
   searchSeries(query: string): Promise<Series[]>;
   
   // Chapter operations
@@ -212,11 +214,37 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(series).where(eq(series.authorId, authorId));
   }
 
-  async getTrendingSeries(limit = 10): Promise<Series[]> {
+  async getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]> {
+    const limit = filters?.limit || 10;
     return await db
       .select()
       .from(series)
-      .orderBy(desc(series.viewCount))
+      .orderBy(desc(series.viewCount), desc(series.followerCount))
+      .limit(limit);
+  }
+
+  async getRisingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]> {
+    const limit = filters?.limit || 12;
+    return await db
+      .select()
+      .from(series)
+      .where(
+        and(
+          sql`${series.createdAt} >= NOW() - INTERVAL '30 days'`,
+          sql`${series.viewCount} > 100`
+        )
+      )
+      .orderBy(desc(series.viewCount), desc(series.createdAt))
+      .limit(limit);
+  }
+
+  async getTrendingCreators(filters?: { timeframe?: string; limit?: number }): Promise<User[]> {
+    const limit = filters?.limit || 12;
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isCreator, true))
+      .orderBy(desc(users.followerCount), desc(users.totalViews))
       .limit(limit);
   }
 

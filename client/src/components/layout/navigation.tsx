@@ -23,6 +23,14 @@ import {
   Coins,
   Crown,
   LogOut,
+  Home,
+  Compass,
+  PlusCircle,
+  Flame,
+  UserPlus,
+  Star,
+  Zap,
+  Shield,
 } from "lucide-react";
 
 export function Navigation() {
@@ -58,23 +66,32 @@ export function Navigation() {
           {/* Navigation Menu - Centered */}
           <div className="flex-1 flex justify-center items-center space-x-8">
             <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/" ? "text-primary" : "text-muted-foreground"}`}>
+              <Link href="/" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === "/" ? "text-primary" : "text-muted-foreground"}`}>
+                <Home className="w-4 h-4" />
                 Home
               </Link>
-              <Link href="/browse" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/browse" ? "text-primary" : "text-muted-foreground"}`}>
+              <Link href="/browse" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === "/browse" ? "text-primary" : "text-muted-foreground"}`}>
+                <Compass className="w-4 h-4" />
                 Browse
+              </Link>
+              <Link href="/trending" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === "/trending" ? "text-primary" : "text-muted-foreground"}`}>
+                <Flame className="w-4 h-4" />
+                Trending
               </Link>
               {isAuthenticated && (
                 <>
-                  <Link href="/library" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/library" ? "text-primary" : "text-muted-foreground"}`}>
+                  <Link href="/library" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === "/library" ? "text-primary" : "text-muted-foreground"}`}>
+                    <BookOpen className="w-4 h-4" />
                     Library
                   </Link>
                   {user?.isCreator ? (
-                    <Link href="/creator/dashboard" className={`text-sm font-medium transition-colors hover:text-primary ${location.startsWith("/creator") ? "text-primary" : "text-muted-foreground"}`}>
+                    <Link href="/creator/dashboard" className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location.startsWith("/creator") ? "text-primary" : "text-muted-foreground"}`}>
+                      <PlusCircle className="w-4 h-4" />
                       Create
                     </Link>
                   ) : (
-                    <Link href="/become-creator" className="text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+                    <Link href="/become-creator" className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+                      <UserPlus className="w-4 h-4" />
                       Become Creator
                     </Link>
                   )}
@@ -142,14 +159,39 @@ export function Navigation() {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">
-                          {user?.firstName && user?.lastName
-                            ? `${user.firstName} ${user.lastName}`
-                            : user?.email}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">
+                            {user?.firstName && user?.lastName
+                              ? `${user.firstName} ${user.lastName}`
+                              : user?.email}
+                          </p>
+                          {/* Role Badges */}
+                          {user?.isAdmin && (
+                            <Badge variant="destructive" className="text-xs">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Admin
+                            </Badge>
+                          )}
+                          {user?.isCreator && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Star className="w-3 h-3 mr-1" />
+                              Creator
+                            </Badge>
+                          )}
+                          {user?.isEliteReader && (
+                            <Badge variant="outline" className="text-xs">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Elite
+                            </Badge>
+                          )}
+                        </div>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
                           {user?.email}
                         </p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Coins className="w-3 h-3" />
+                          {user?.coinBalance?.toLocaleString() || 0} coins
+                        </div>
                       </div>
                     </div>
                     <DropdownMenuSeparator />

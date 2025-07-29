@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Update user to include creator application data
+      // Auto-approve and update user to creator status instantly
       const updatedUser = await storage.updateUser(userId, {
         creatorDisplayName: displayName,
         creatorBio: bio,
@@ -55,11 +55,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         creatorContentTypes: JSON.stringify(contentTypes),
         creatorExperience: experience,
         creatorMotivation: motivation,
-        creatorApplicationStatus: 'pending',
+        creatorApplicationStatus: 'approved',
         creatorApplicationDate: new Date().toISOString(),
+        isCreator: true, // Auto-approve creator status
       });
 
-      res.json({ message: "Creator application submitted successfully", user: updatedUser });
+      res.json({ message: "Creator application approved! Welcome to the Creator Program!", user: updatedUser });
     } catch (error) {
       console.error("Error submitting creator application:", error);
       res.status(500).json({ message: "Failed to submit application" });
@@ -80,6 +81,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching series:", error);
       res.status(500).json({ message: "Failed to fetch series" });
+    }
+  });
+
+  // Trending series endpoint
+  app.get('/api/series/trending', optionalAuth, async (req, res) => {
+    try {
+      const { timeframe, limit } = req.query;
+      const series = await storage.getTrendingSeries({
+        timeframe: timeframe as string || 'week',
+        limit: limit ? parseInt(limit as string) : 20,
+      });
+      res.json(series);
+    } catch (error) {
+      console.error("Error fetching trending series:", error);
+      res.status(500).json({ message: "Failed to fetch trending series" });
+    }
+  });
+
+  // Rising series endpoint
+  app.get('/api/series/rising', optionalAuth, async (req, res) => {
+    try {
+      const { timeframe, limit } = req.query;
+      const series = await storage.getRisingSeries({
+        timeframe: timeframe as string || 'week',
+        limit: limit ? parseInt(limit as string) : 12,
+      });
+      res.json(series);
+    } catch (error) {
+      console.error("Error fetching rising series:", error);
+      res.status(500).json({ message: "Failed to fetch rising series" });
+    }
+  });
+
+  // Trending creators endpoint
+  app.get('/api/creators/trending', optionalAuth, async (req, res) => {
+    try {
+      const { timeframe, limit } = req.query;
+      const creators = await storage.getTrendingCreators({
+        timeframe: timeframe as string || 'week',
+        limit: limit ? parseInt(limit as string) : 12,
+      });
+      res.json(creators);
+    } catch (error) {
+      console.error("Error fetching trending creators:", error);
+      res.status(500).json({ message: "Failed to fetch trending creators" });
     }
   });
 
