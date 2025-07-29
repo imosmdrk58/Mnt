@@ -173,6 +173,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       
+      // Validate required fields
+      if (!req.body.title?.trim()) {
+        return res.status(400).json({ message: "Title is required" });
+      }
+      if (!req.body.description?.trim()) {
+        return res.status(400).json({ message: "Description is required" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: "Cover image is required" });
+      }
+
+      // Process and resize cover image
+      let coverImageUrl = null;
+      if (req.file) {
+        const sharp = require('sharp');
+        const path = require('path');
+        const resizedFilename = `resized_${req.file.filename}`;
+        const resizedPath = path.join('uploads', resizedFilename);
+        
+        await sharp(req.file.path)
+          .resize(300, 450, { 
+            fit: 'cover',
+            position: 'center'
+          })
+          .jpeg({ quality: 85 })
+          .toFile(resizedPath);
+          
+        coverImageUrl = `/uploads/${resizedFilename}`;
+      }
+      
       // Validate input - convert form data types
       const seriesData = insertSeriesSchema.parse({
         ...req.body,
@@ -180,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         genres: req.body.genres ? JSON.parse(req.body.genres) : [],
         tags: req.body.tags ? JSON.parse(req.body.tags) : [],
         isNSFW: req.body.isNSFW === 'true' || req.body.isNSFW === true,
-        coverImageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+        coverImageUrl,
       });
 
       const series = await storage.createSeries(seriesData);

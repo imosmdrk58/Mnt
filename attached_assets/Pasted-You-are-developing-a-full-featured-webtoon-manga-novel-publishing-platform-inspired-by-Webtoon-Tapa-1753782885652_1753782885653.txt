@@ -1,0 +1,100 @@
+You are developing a full-featured webtoon/manga/novel publishing platform inspired by Webtoon, Tapas, and MangaDex, intended for real users. The platform must operate with real dynamic data, complete backend logic, and proper auth, permissions, monetization, and UX/UI behavior.
+
+The following fixes, features, and validations are mandatory:
+
+📌 1. SERIES CREATION VALIDATION & IMAGE HANDLING
+Required Fields:
+
+title, description, and coverImage must be required at both frontend and backend.
+
+Form must prevent submission without these.
+
+Image Resizing:
+
+Automatically resize uploaded coverImage and any other images to fit standard display sizes (e.g. 300x450px for cover).
+
+Use a backend image service or sharp, or resize client-side before upload.
+
+💳 2. COINS SYSTEM (REAL STRIPE INTEGRATION)
+The current system is insecure and fake: Coins are granted without payment.
+
+Implement a working purchase flow:
+
+Clicking the coin icon in navbar → route to /coins page.
+
+/coins displays bundles (e.g., 100, 500, 1000 coins).
+
+Integrate Stripe Checkout:
+
+On successful payment, backend should update user.coinBalance.
+
+Record each transaction in a Transactions table (userID, amount, date).
+
+👤 3. USER PROFILE SYSTEM
+Fix current privacy issues:
+
+Do not show emails on any user profile pages.
+
+Implement /user/:userID route:
+
+Show @username, profile bio, profile picture.
+
+Show badges (Author, Reader, Admin, etc.).
+
+Show series list, groups, followers/following counts.
+
+Display account creation date (properly formatted).
+
+Must be real data.
+
+Show current user’s @username in:
+
+Navbar dropdown.
+
+Comment sections.
+
+User profile and any public posts.
+
+💰 4. PREMIUM CHAPTERS (UNLOCKABLE WITH COINS)
+Series with 500+ followers can unlock premium chapters.
+
+If a chapter is premium:
+
+Must show coin price to read.
+
+User must have enough coins to unlock.
+
+On unlock:
+
+Deduct coins.
+
+Record the unlock.
+
+Grant chapter access permanently.
+
+Add premium toggle in chapter creation UI (enabled only if author qualifies).
+
+📊 5. AD REVENUE DASHBOARD (REAL STATS)
+Series with 1000+ followers unlock Ad Monetization.
+
+Under /creator/dashboard show:
+
+Ad Revenue tab with real-time stats:
+
+Views, impressions, CTR, revenue.
+
+Track impressions per chapter (store in DB).
+
+Optionally fake CTR generation if you don't have real ad integration yet.
+
+Show weekly charts and cumulative totals.
+❌ 7. CUSTOM 404 PAGE
+Design a unique, stylized 404 page.
+
+Should include:
+
+Themed comic-style illustration (or animation).
+
+Message like: “Lost in the Panels?”
+
+Links to return to homepage or discover.

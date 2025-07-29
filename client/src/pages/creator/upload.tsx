@@ -257,10 +257,29 @@ export default function CreatorUpload() {
   const handleSubmitSeries = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
     if (!seriesData.title.trim()) {
       toast({
         title: "Validation Error",
         description: "Please enter a title for your series.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!seriesData.description.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a description for your series.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!seriesData.coverImage) {
+      toast({
+        title: "Validation Error",
+        description: "Please upload a cover image for your series.",
         variant: "destructive",
       });
       return;
