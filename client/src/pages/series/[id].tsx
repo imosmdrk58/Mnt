@@ -79,16 +79,16 @@ export default function SeriesDetail() {
 
   // Author data is included with series data, no separate fetch needed
 
-  // Fetch chapters - works without auth
+  // Fetch chapters for this specific series - works without auth
   const { data: chapters = [], isLoading: chaptersLoading, error: chaptersError } = useQuery<Chapter[]>({
-    queryKey: ["/api/series", id, "chapters"],
+    queryKey: [`/api/series/${id}/chapters`],
     enabled: !!id,
     retry: 2,
   });
 
-  // Fetch reviews (includes user information) - works without auth
+  // Fetch reviews for this specific series - works without auth
   const { data: reviews = [], isLoading: reviewsLoading, error: reviewsError } = useQuery<(Review & { user: User })[]>({
-    queryKey: ["/api/series", id, "reviews"],
+    queryKey: [`/api/series/${id}/reviews`],
     enabled: !!id,
     retry: 2,
   });
@@ -194,7 +194,7 @@ export default function SeriesDetail() {
     onSuccess: () => {
       setReviewText("");
       setReviewRating(5);
-      queryClient.invalidateQueries({ queryKey: ["/api/series", id, "reviews"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/series/${id}/reviews`] });
       toast({
         title: "Review submitted",
         description: "Thank you for your review!",
@@ -232,12 +232,12 @@ export default function SeriesDetail() {
         }
       }
       
-      navigate(`/reader/${id}/${targetChapter.id}`);
+      navigate(`/reader/${series.type}/${targetChapter.id}`);
     }
   };
 
   const handleChapterClick = (chapterId: string) => {
-    navigate(`/reader/${id}/${chapterId}`);
+    navigate(`/reader/${series.type}/${chapterId}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -676,13 +676,13 @@ export default function SeriesDetail() {
                           <Avatar>
                             <AvatarImage src={review.user?.profileImageUrl} />
                             <AvatarFallback>
-                              {review.user?.username?.charAt(0).toUpperCase() ?? "?"}
+                              {review.user?.username ? review.user.username.charAt(0).toUpperCase() : "?"}
                             </AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className="font-medium">{review.user?.username ?? "Anonymous"}</span>
+                              <span className="font-medium">{review.user?.username || "Anonymous"}</span>
                               <div className="flex items-center">
                                 {Array.from({ length: review.rating }).map((_, i) => (
                                   <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
