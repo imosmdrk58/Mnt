@@ -66,10 +66,10 @@ export default function MangaReader({
       if (!loadedImages.has(i) && !failedImages.has(i)) {
         const img = new Image();
         img.onload = () => {
-          setLoadedImages(prev => new Set([...prev, i]));
+          setLoadedImages(prev => new Set(Array.from(prev).concat([i])));
         };
         img.onerror = () => {
-          setFailedImages(prev => new Set([...prev, i]));
+          setFailedImages(prev => new Set(Array.from(prev).concat([i])));
         };
         img.src = pages[i];
       }
@@ -246,7 +246,8 @@ export default function MangaReader({
   const isLastPage = currentPage >= pages.length - 1;
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden"
+         style={{ overscrollBehavior: 'none' }}>
       {/* Reader Controls */}
       <div className="absolute top-20 right-4 z-10 space-y-2">
         <Button

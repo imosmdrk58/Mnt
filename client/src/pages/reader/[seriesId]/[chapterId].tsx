@@ -92,27 +92,29 @@ export default function Reader() {
 
   // Handle scroll-based UI hiding (only hide on scroll, not on timer)
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const currentScrollY = target.scrollTop || window.scrollY;
       
-      // Hide UI on any significant scroll movement
-      if (showUI && Math.abs(currentScrollY - lastScrollY) > 100) {
+      // Only hide UI if manually shown and significant scroll movement detected
+      if (showUI && !uiToggleManual && Math.abs(currentScrollY - lastScrollY) > 50) {
         setShowUI(false);
-        setUiToggleManual(false);
       }
       
       setLastScrollY(currentScrollY);
     };
 
-    const container = document.querySelector('.fixed.inset-0.overflow-y-auto');
+    // First try to find the main reader container
+    const container = document.querySelector('.fixed.inset-0.overflow-y-auto') as HTMLElement;
     if (container) {
       container.addEventListener('scroll', handleScroll, { passive: true });
       return () => container.removeEventListener('scroll', handleScroll);
     }
     
+    // Fallback to window scroll
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY, showUI]);
+  }, [lastScrollY, showUI, uiToggleManual]);
 
   // Initialize chapter data and check like status
   useEffect(() => {
@@ -399,7 +401,7 @@ export default function Reader() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto" onClick={toggleUI}>
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto overflow-x-hidden" onClick={toggleUI} style={{ overscrollBehavior: 'none' }}>
       {/* Floating Menu Button - Always Visible */}
       {!showUI && (
         <Button

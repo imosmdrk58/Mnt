@@ -340,10 +340,12 @@ export default function NovelReader({
       {/* Main Content */}
       <div 
         ref={containerRef}
-        className={`flex-1 overflow-y-auto transition-colors duration-300 ${getThemeClasses()}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden transition-colors duration-300 ${getThemeClasses()}`}
         style={{
           fontSize: `${settings.fontSize}px`,
           lineHeight: settings.lineHeight,
+          overscrollBehavior: 'none',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <div className="max-w-4xl mx-auto px-6 py-8">

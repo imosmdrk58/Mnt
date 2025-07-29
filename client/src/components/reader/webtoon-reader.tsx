@@ -33,10 +33,10 @@ export default function WebtoonReader({
         if (!loadedImages.has(index) && !failedImages.has(index)) {
           const img = new Image();
           img.onload = () => {
-            setLoadedImages(prev => new Set([...prev, index]));
+            setLoadedImages(prev => new Set(Array.from(prev).concat([index])));
           };
           img.onerror = () => {
-            setFailedImages(prev => new Set([...prev, index]));
+            setFailedImages(prev => new Set(Array.from(prev).concat([index])));
           };
           img.src = page;
         }
@@ -147,9 +147,11 @@ export default function WebtoonReader({
   return (
     <div 
       ref={containerRef}
-      className="h-full overflow-y-auto bg-background"
+      className="h-screen overflow-y-auto overflow-x-hidden bg-background"
       style={{
         scrollBehavior: 'smooth',
+        overscrollBehavior: 'none',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       <div className="max-w-4xl mx-auto">
