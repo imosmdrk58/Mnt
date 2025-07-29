@@ -1,0 +1,101 @@
+Fix Reader Crash, Chapter Previews, User State Issues, and Identity Handling
+⚠️ 1. [CRITICAL] Fix chapter Initialization Error in Reader
+tsx
+Copy
+Edit
+[plugin:runtime-error-plugin] Cannot access 'chapter' before initialization
+🔧 Ensure chapter is defined before use in useEffect.
+
+Example fix:
+
+tsx
+Copy
+Edit
+useEffect(() => {
+  if (chapter) {
+    setLikeCount(chapter.likeCount || 0);
+  }
+}, [chapter]);
+Or safely guard it by:
+
+tsx
+Copy
+Edit
+const likeCount = chapter?.likeCount ?? 0;
+📷 2. Add Chapter Preview Image (Webtoon Style)
+On /series/[id] page, each chapter item should:
+
+Display first image of the chapter as a thumbnail.
+
+Use chapter.images?.[0] or similar if available.
+
+If empty, fallback to "No Preview" placeholder.
+
+Add metadata:
+
+❤️ Likes
+
+👀 Views
+
+💬 Comments count
+
+🔗 3. Fix Share Button (Series & Chapter)
+Implement share functionality:
+
+Open modal popup with:
+
+📋 Copy link
+
+📤 Share to Twitter, Reddit, Discord
+
+Use navigator.share if available.
+
+🧩 4. Remove Random 0 Below Genre Tags
+This issue likely comes from an accidental .map() or length call:
+
+Example: series.genres.length || 0 rendering incorrectly.
+
+Ensure only tags are rendered, and extra 0 is removed.
+
+📈 5. Fix Reading Progress Tracking
+On chapter scroll complete (or 100% read):
+
+Save progress:
+
+✅ Chapter marked as read
+
+✅ Update "Read This Week" & "Reading Streak" in user profile
+
+✅ Optional: store timestamps
+
+Store in database or at least localStorage fallback
+
+🧷 6. Fix Follow & Bookmark State
+Properly persist:
+
+✅ Follow toggles to Unfollow after action
+
+✅ Bookmark toggles to Remove from Library
+
+States should not reset on reload.
+
+Backend must return correct follow/bookmark status for logged-in user.
+
+🧑 7. [CRITICAL] Replace All userId with username Site-Wide
+Replace:
+
+/user/:userId → /user/:username
+
+comment.author → use author.username
+
+Review, chapter, and series authors must all use username display.
+
+Update links and UI to use readable username.
+
+🗣️ 8. Review Logic Fix
+Only allow one review per user per series.
+
+If a user has already reviewed:
+
+Show their existing review with edit/delete options.
+

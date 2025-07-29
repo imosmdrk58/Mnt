@@ -91,6 +91,8 @@ export const chapters = pgTable("chapters", {
   title: text("title").notNull(),
   chapterNumber: integer("chapter_number").notNull(),
   content: jsonb("content"), // For novel text or image URLs
+  images: text("images").array(), // Array of image URLs for webtoon/manga
+  previewImage: text("preview_image"), // First image or custom thumbnail
   status: chapterStatusEnum("status").default('free'),
   coinPrice: integer("coin_price").default(0),
   viewCount: integer("view_count").default(0),

@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Star,
   BookOpen,
@@ -31,6 +32,8 @@ import {
   Flag,
   ArrowLeft,
   UserPlus,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import type { Series, Chapter, Review, Comment, User } from "@shared/schema";
 
@@ -62,6 +65,7 @@ export default function SeriesDetail() {
   }
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -219,6 +223,53 @@ export default function SeriesDetail() {
       });
     },
   });
+
+  // Share functionality with various platforms
+  const shareUrl = window.location.origin + `/series/${id}`;
+  const shareText = `Check out "${series.title}" by @${series.author?.username}`;
+
+  const handleShare = async (platform?: string) => {
+    if (platform === 'copy' || !platform) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link copied!",
+          description: "Series link has been copied to your clipboard.",
+        });
+        setShowShareModal(false);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+    } else if (platform === 'reddit') {
+      window.open(`https://reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareText)}`, '_blank');
+    } else if (platform === 'discord') {
+      // Discord doesn't have a direct share URL, so copy the formatted message
+      const discordText = `${shareText} ${shareUrl}`;
+      try {
+        await navigator.clipboard.writeText(discordText);
+        toast({
+          title: "Discord message copied!",
+          description: "Paste this in Discord to share the series.",
+        });
+        setShowShareModal(false);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    } else if (platform === 'native' && navigator.share) {
+      try {
+        await navigator.share({
+          title: series.title,
+          text: shareText,
+          url: shareUrl,
+        });
+        setShowShareModal(false);
+      } catch (err) {
+        console.error('Failed to share:', err);
+      }
+    }
+  };
 
   const handleStartReading = () => {
     if (chapters.length > 0) {
@@ -388,10 +439,10 @@ export default function SeriesDetail() {
                 <p className="text-muted-foreground mb-4">
                   by{" "}
                   <button
-                    onClick={() => navigate(`/user/${series.authorId}`)}
+                    onClick={() => navigate(`/user/${series.author?.username || series.authorId}`)}
                     className="text-primary hover:text-primary/80 font-medium hover:underline"
                   >
-                    {series.author?.username || series.author?.creatorDisplayName || series.author?.firstName || "Unknown Author"}
+                    @{series.author?.username || "Unknown Author"}
                   </button>
                 </p>
                 
@@ -494,7 +545,7 @@ export default function SeriesDetail() {
                   </Button>
                 )}
                 
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" onClick={() => setShowShareModal(true)}>
                   <Share2 className="w-5 h-5 mr-2" />
                   Share
                 </Button>
@@ -564,24 +615,51 @@ export default function SeriesDetail() {
                       onClick={() => handleChapterClick(chapter.id)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-foreground">
+                        <div className="flex items-start gap-4">
+                          {/* Chapter Preview Image */}
+                          <div className="flex-shrink-0">
+                            {chapter.previewImage || (chapter.images && chapter.images.length > 0) ? (
+                              <div className="w-16 h-20 bg-muted rounded-md overflow-hidden">
+                                <img 
+                                  src={chapter.previewImage || chapter.images?.[0]} 
+                                  alt={`Chapter ${chapter.chapterNumber} preview`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-20 bg-muted rounded-md flex items-center justify-center">
+                                <BookOpen className="w-6 h-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Chapter Info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-foreground truncate">
                               Chapter {chapter.chapterNumber}: {chapter.title}
                             </h3>
-                            <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
+                            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                               <div className="flex items-center space-x-1">
                                 <Calendar className="w-4 h-4" />
                                 <span>{formatDate(chapter.createdAt!)}</span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <Eye className="w-4 h-4" />
-                                <span>{chapter.viewCount || 0}</span>
+                                <span>{chapter.viewCount || 0} views</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Heart className="w-4 h-4" />
+                                <span>{chapter.likeCount || 0} likes</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>0 comments</span>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="flex items-center space-x-2">
+                          {/* Status and Action */}
+                          <div className="flex items-center space-x-2 flex-shrink-0">
                             {chapter.status === 'premium' && (
                               <Badge className="bg-warning text-warning-foreground">
                                 Premium
@@ -736,6 +814,67 @@ export default function SeriesDetail() {
       </main>
 
       <MobileNav />
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share "{series.title}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+              <div className="flex-1 text-sm text-muted-foreground truncate">
+                {shareUrl}
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleShare('copy')}
+                variant="outline"
+              >
+                <Copy className="w-4 h-4 mr-1" />
+                Copy
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleShare('twitter')}
+                className="justify-start"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Twitter
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleShare('reddit')}
+                className="justify-start"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Reddit
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleShare('discord')}
+                className="justify-start"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Discord
+              </Button>
+              {navigator.share && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleShare('native')}
+                  className="justify-start"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  More
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

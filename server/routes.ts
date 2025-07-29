@@ -788,6 +788,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chapter like endpoints
+  app.post("/api/chapters/:id/like", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      
+      const result = await storage.toggleChapterLike(id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling chapter like:", error);
+      res.status(500).json({ message: "Failed to toggle chapter like" });
+    }
+  });
+
+  app.get("/api/chapters/:id/like-status", optionalAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.json({ isLiked: false });
+      }
+      
+      const isLiked = await storage.hasUserLikedChapter(id, userId);
+      res.json({ isLiked });
+    } catch (error) {
+      console.error("Error checking like status:", error);
+      res.status(500).json({ message: "Failed to check like status" });
+    }
+  });
+
+  app.post("/api/chapters/:id/view", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      await storage.trackChapterView(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking chapter view:", error);
+      res.status(500).json({ message: "Failed to track chapter view" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
