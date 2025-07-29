@@ -6,8 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import connectPg from "connect-pg-simple";
-import jwt from 'jsonwebtoken';
+
 import { Request, Response, NextFunction } from 'express';
 
 declare global {
@@ -32,17 +31,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-  });
-
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    store: sessionStore,
+    store: storage.sessionStore,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -56,14 +49,11 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy({
-      usernameField: 'email',
-      passwordField: 'password'
-    }, async (email, password, done) => {
+    new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByEmail(email);
+        const user = await storage.getUserByUsername(username);
         if (!user || !user.password || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: 'Invalid email or password' });
+          return done(null, false, { message: 'Invalid username or password' });
         }
         return done(null, user);
       } catch (error) {
@@ -85,21 +75,27 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { username, email, password, firstName, lastName } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+      if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email and password are required" });
       }
 
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
         return res.status(400).json({ message: "User already exists with this email" });
+      }
+
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already taken" });
       }
 
       // Create new user
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
+        username,
         email,
         password: hashedPassword,
         firstName,
@@ -111,6 +107,7 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json({
           id: user.id,
+          username: user.username,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -139,6 +136,7 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.json({
           id: user.id,
+          username: user.username,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -168,6 +166,7 @@ export function setupAuth(app: Express) {
     
     res.json({
       id: req.user.id,
+      username: req.user.username,
       email: req.user.email,
       firstName: req.user.firstName,
       lastName: req.user.lastName,

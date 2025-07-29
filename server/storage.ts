@@ -12,6 +12,7 @@ import {
   groupMembers,
   type User,
   type UpsertUser,
+  type InsertUser,
   type Series,
   type InsertSeries,
   type Chapter,
@@ -28,11 +29,17 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, sql, inArray } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 
 export interface IStorage {
+  // Session store
+  sessionStore: any;
+  
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
@@ -92,6 +99,16 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  sessionStore: any;
+
+  constructor() {
+    const PostgresSessionStore = connectPg(session);
+    this.sessionStore = new PostgresSessionStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    });
+  }
+
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -100,6 +117,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
 
@@ -148,17 +170,18 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${series.genres} @> ARRAY[${filters.genre}]`);
     }
     
+    let builtQuery = query;
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      builtQuery = builtQuery.where(and(...conditions));
     }
     
-    query = query.orderBy(desc(series.updatedAt));
+    builtQuery = builtQuery.orderBy(desc(series.updatedAt));
     
     if (filters?.limit) {
-      query = query.limit(filters.limit);
+      builtQuery = builtQuery.limit(filters.limit);
     }
     
-    return await query;
+    return await builtQuery;
   }
 
   async createSeries(seriesData: InsertSeries): Promise<Series> {
@@ -239,11 +262,12 @@ export class DatabaseStorage implements IStorage {
 
   // Comment operations
   async getCommentsByChapterId(chapterId: string): Promise<Comment[]> {
-    return await db
+    const result = await db
       .select()
       .from(comments)
       .where(eq(comments.chapterId, chapterId))
       .orderBy(desc(comments.createdAt));
+    return result;
   }
 
   async createComment(commentData: InsertComment): Promise<Comment> {

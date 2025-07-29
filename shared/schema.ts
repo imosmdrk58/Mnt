@@ -23,12 +23,13 @@ export const sessions = pgTable(
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => [index("idx_session_expire").on(table.expire)],
 );
 
 // User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username").unique().notNull(),
   email: varchar("email").unique().notNull(),
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
@@ -119,7 +120,7 @@ export const comments = pgTable("comments", {
   chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
-  parentId: varchar("parent_id").references(() => comments.id),
+  parentId: varchar("parent_id"),
   likeCount: integer("like_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -244,9 +245,7 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.parentId],
     references: [comments.id],
   }),
-  replies: many(comments, {
-    relationName: "commentReplies",
-  }),
+  replies: many(comments),
 }));
 
 // Insert schemas
@@ -257,6 +256,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 });
 
 export const registerUserSchema = insertUserSchema.pick({
+  username: true,
   email: true,
   password: true,
   firstName: true,
@@ -264,10 +264,11 @@ export const registerUserSchema = insertUserSchema.pick({
 }).extend({
   password: z.string().min(8, "Password must be at least 8 characters"),
   email: z.string().email("Invalid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
 });
 
 export const loginUserSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
