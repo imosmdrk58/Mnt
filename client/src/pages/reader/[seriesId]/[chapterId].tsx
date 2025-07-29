@@ -95,8 +95,8 @@ export default function Reader() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Only hide UI if manually toggled and user scrolls
-      if (uiToggleManual && Math.abs(currentScrollY - lastScrollY) > 50) {
+      // Hide UI on any significant scroll movement
+      if (showUI && Math.abs(currentScrollY - lastScrollY) > 100) {
         setShowUI(false);
         setUiToggleManual(false);
       }
@@ -104,9 +104,15 @@ export default function Reader() {
       setLastScrollY(currentScrollY);
     };
 
+    const container = document.querySelector('.fixed.inset-0.overflow-y-auto');
+    if (container) {
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+    
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY, uiToggleManual]);
+  }, [lastScrollY, showUI]);
 
   // Initialize chapter data and check like status
   useEffect(() => {
@@ -132,10 +138,7 @@ export default function Reader() {
   const toggleUI = () => {
     const newShowUI = !showUI;
     setShowUI(newShowUI);
-    if (newShowUI) {
-      // If showing UI manually, mark it as manual toggle
-      setUiToggleManual(true);
-    }
+    setUiToggleManual(newShowUI);  // Track manual toggles
   };
 
   // Fetch comments
@@ -396,7 +399,7 @@ export default function Reader() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background z-50" onClick={toggleUI}>
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto" onClick={toggleUI}>
       {/* Floating Menu Button - Always Visible */}
       {!showUI && (
         <Button
@@ -511,7 +514,7 @@ export default function Reader() {
       )}
 
       {/* Reader Content - Full Screen */}
-      <div className={`min-h-full w-full ${showUI ? 'pt-20' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`min-h-screen w-full ${showUI ? 'pt-20' : ''}`} onClick={(e) => e.stopPropagation()}>
         {renderReader()}
         
         {/* Comments Section - Always visible below content */}
@@ -831,7 +834,7 @@ export default function Reader() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const text = `Check out "${chapter.title}" from ${series.title}!`;
+                    const text = `Check out "${chapter?.title || 'this chapter'}" from ${series?.title || 'this series'}!`;
                     const url = `${window.location.origin}/reader/${seriesId}/${chapterId}`;
                     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
                   }}
@@ -843,7 +846,8 @@ export default function Reader() {
                   size="sm"
                   onClick={() => {
                     const url = `${window.location.origin}/reader/${seriesId}/${chapterId}`;
-                    window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(chapter.title)}`, '_blank');
+                    const title = `${chapter?.title || 'Chapter'} - ${series?.title || 'Webtoon'}`;
+                    window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank');
                   }}
                 >
                   Reddit

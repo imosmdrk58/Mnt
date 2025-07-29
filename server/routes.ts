@@ -545,6 +545,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updatedLikeCount = Math.max(0, (chapter?.likeCount || 0) - 1);
         await storage.updateChapter(chapterId, { likeCount: updatedLikeCount });
         
+        // Update series total like count (sum of all chapter likes)
+        if (chapter?.seriesId) {
+          const chapters = await storage.getChaptersBySeriesId(chapter.seriesId);
+          const totalSeriesLikes = chapters.reduce((sum, ch) => sum + (ch.likeCount || 0), 0) - 1;
+          await storage.updateSeries(chapter.seriesId, { likeCount: Math.max(0, totalSeriesLikes) });
+        }
+        
         res.json({ isLiked: false, totalLikes: updatedLikeCount });
       } else {
         // Like the chapter
@@ -552,6 +559,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const chapter = await storage.getChapter(chapterId);
         const updatedLikeCount = (chapter?.likeCount || 0) + 1;
         await storage.updateChapter(chapterId, { likeCount: updatedLikeCount });
+        
+        // Update series total like count (sum of all chapter likes)  
+        if (chapter?.seriesId) {
+          const chapters = await storage.getChaptersBySeriesId(chapter.seriesId);
+          const totalSeriesLikes = chapters.reduce((sum, ch) => sum + (ch.likeCount || 0), 0) + 1;
+          await storage.updateSeries(chapter.seriesId, { likeCount: totalSeriesLikes });
+        }
         
         res.json({ isLiked: true, totalLikes: updatedLikeCount });
       }
