@@ -68,6 +68,26 @@ export default function Reader() {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
+  // Fetch series data
+  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
+    queryKey: [`/api/series/${seriesId}`],
+    enabled: !!seriesId,
+    retry: 2,
+    onError: (err) => {
+      console.error("Series fetch error:", err);
+    },
+  });
+
+  // Fetch current chapter
+  const { data: chapter, isLoading: chapterLoading, error: chapterError } = useQuery<Chapter>({
+    queryKey: [`/api/chapters/${chapterId}`],
+    enabled: !!chapterId,
+    retry: 2,
+    onError: (err) => {
+      console.error("Chapter fetch error:", err);
+    },
+  });
+
   // Auto-hide UI after 3 seconds of inactivity
   useEffect(() => {
     if (!showUI) return;
@@ -106,26 +126,6 @@ export default function Reader() {
 
   // Only redirect to login for premium content if needed
   // Note: Basic content reading should be accessible to all users
-
-  // Fetch series data
-  const { data: series, isLoading: seriesLoading, error: seriesError } = useQuery<Series>({
-    queryKey: [`/api/series/${seriesId}`],
-    enabled: !!seriesId,
-    retry: 2,
-    onError: (err) => {
-      console.error("Series fetch error:", err);
-    },
-  });
-
-  // Fetch current chapter
-  const { data: chapter, isLoading: chapterLoading, error: chapterError } = useQuery<Chapter>({
-    queryKey: [`/api/chapters/${chapterId}`],
-    enabled: !!chapterId,
-    retry: 2,
-    onError: (err) => {
-      console.error("Chapter fetch error:", err);
-    },
-  });
 
   // Fetch all chapters for navigation
   const { data: allChapters = [] } = useQuery<Chapter[]>({

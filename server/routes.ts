@@ -248,6 +248,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reorder chapters
+  app.post("/api/series/:id/reorder-chapters", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { chapterIds } = req.body;
+
+      if (!Array.isArray(chapterIds)) {
+        return res.status(400).json({ error: "chapterIds must be an array" });
+      }
+
+      // Update chapter order in database
+      for (let i = 0; i < chapterIds.length; i++) {
+        await storage.updateChapter(chapterIds[i], {
+          chapterNumber: i + 1
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reorder chapters error:", error);
+      res.status(500).json({ error: "Failed to reorder chapters" });
+    }
+  });
+
   app.get('/api/chapters/:id', optionalAuth, async (req, res) => {
     try {
       const chapter = await storage.getChapter(req.params.id);
