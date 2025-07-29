@@ -37,7 +37,7 @@ function Router() {
         <Route path="/search" component={SearchPage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/coins" component={CoinsPage} />
-        <Route path="/user/:id" component={UserProfilePage} />
+        <Route path="/user/:username" component={UserProfilePage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />
         

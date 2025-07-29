@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,21 +28,60 @@ import type { User, Series } from "@shared/schema";
 
 interface UserProfile extends User {
   series?: Series[];
-  followers?: number;
-  following?: number;
+  stats?: {
+    followers: number;
+    following: number;
+    chaptersRead: number;
+  };
   isFollowing?: boolean;
 }
 
 export default function UserProfilePage() {
-  const { id } = useParams();
+  const { username } = useParams();
   const { user: currentUser, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState("series");
+  const { toast } = useToast();
 
-  // Fetch user profile data
+  // Fetch user profile data by username
   const { data: profile, isLoading } = useQuery<UserProfile>({
-    queryKey: ['/api/users', id],
-    enabled: !!id,
+    queryKey: ['/api/user', username],
+    enabled: !!username,
   });
+
+  // Follow/unfollow mutation
+  const followMutation = useMutation({
+    mutationFn: async ({ followingId, isFollowing }: { followingId: string; isFollowing: boolean }) => {
+      if (isFollowing) {
+        return apiRequest('/api/follow', 'DELETE', { followingId });
+      } else {
+        return apiRequest('/api/follow', 'POST', { followingId });
+      }
+    },
+    onSuccess: (_, { isFollowing }) => {
+      // Invalidate and refetch the profile
+      queryClient.invalidateQueries({ queryKey: ['/api/user', username] });
+      toast({
+        title: isFollowing ? "Unfollowed" : "Followed",
+        description: isFollowing ? "You unfollowed this user" : "You are now following this user",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFollowClick = () => {
+    if (!profile || !isAuthenticated) return;
+    
+    followMutation.mutate({
+      followingId: profile.id,
+      isFollowing: profile.isFollowing || false,
+    });
+  };
 
   const formatDate = (dateString: string | Date | null | undefined) => {
     if (!dateString) return "Unknown";
@@ -167,7 +208,7 @@ export default function UserProfilePage() {
                 <div className="flex items-center gap-6 text-sm">
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    <span className="font-medium">{profile.followersCount || 0}</span>
+                    <span className="font-medium">{profile.stats?.followers || 0}</span>
                     <span className="text-muted-foreground">followers</span>
                   </div>
                   
@@ -188,7 +229,11 @@ export default function UserProfilePage() {
                 {/* Action Buttons */}
                 {!isOwnProfile && isAuthenticated && (
                   <div className="flex gap-3">
-                    <Button>
+                    <Button 
+                      onClick={handleFollowClick}
+                      disabled={followMutation.isPending}
+                      variant={profile.isFollowing ? "outline" : "default"}
+                    >
                       <Users className="w-4 h-4 mr-2" />
                       {profile.isFollowing ? "Following" : "Follow"}
                     </Button>

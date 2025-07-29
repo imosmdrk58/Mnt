@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,48 @@ import UnifiedSeriesCard from "@/components/ui/unified-series-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Flame, TrendingUp, Users, Star, Crown, Eye, BookOpen } from "lucide-react";
 import type { Series, User } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Trending() {
   const [timeframe, setTimeframe] = useState<"today" | "week" | "month">("week");
+  const [, navigate] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Follow creator mutation
+  const followMutation = useMutation({
+    mutationFn: async (followingId: string) => {
+      return apiRequest('/api/follow', 'POST', { followingId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/creators/trending'] });
+      toast({
+        title: "Followed",
+        description: "You are now following this creator",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to follow creator",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreatorFollow = (creatorId: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to follow creators",
+        variant: "destructive",
+      });
+      return;
+    }
+    followMutation.mutate(creatorId);
+  };
 
   // Fetch trending series
   const { data: trendingSeries = [], isLoading: seriesLoading } = useQuery<Series[]>({
@@ -108,7 +148,9 @@ export default function Trending() {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {trendingCreators.map((creator, index) => (
-                    <Card key={creator.id} className="hover:shadow-lg transition-shadow duration-300">
+                    <Card key={creator.id} className="hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                          onClick={() => navigate(`/user/${encodeURIComponent(creator.username)}`)}
+                    >
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -141,9 +183,18 @@ export default function Trending() {
                               </div>
                             </div>
                           </div>
-                          <Button size="sm" variant="outline">
-                            Follow
-                          </Button>
+                          {user && user.id !== creator.id && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click
+                                handleCreatorFollow(creator.id);
+                              }}
+                            >
+                              Follow
+                            </Button>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -152,15 +203,15 @@ export default function Trending() {
                         </p>
                         <div className="grid grid-cols-3 gap-4 text-center">
                           <div>
-                            <p className="text-lg font-bold">{formatNumber(creator.followerCount || 0)}</p>
+                            <p className="text-lg font-bold">{formatNumber(creator.followersCount || 0)}</p>
                             <p className="text-xs text-muted-foreground">Followers</p>
                           </div>
                           <div>
-                            <p className="text-lg font-bold">{formatNumber(creator.totalViews || 0)}</p>
+                            <p className="text-lg font-bold">{formatNumber(0)}</p>
                             <p className="text-xs text-muted-foreground">Views</p>
                           </div>
                           <div>
-                            <p className="text-lg font-bold">{creator.seriesCount || 0}</p>
+                            <p className="text-lg font-bold">0</p>
                             <p className="text-xs text-muted-foreground">Series</p>
                           </div>
                         </div>

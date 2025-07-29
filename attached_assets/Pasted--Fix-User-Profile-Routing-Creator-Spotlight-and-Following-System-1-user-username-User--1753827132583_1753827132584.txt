@@ -1,0 +1,98 @@
+ Fix User Profile Routing, Creator Spotlight, and Following System
+🧍‍♂️ 1. /user/:username = "User Not Found" Bug
+❌ Issue: Visiting /user/:username shows "User not found", even if the user exists.
+
+✅ Fix:
+
+Backend route (e.g. GET /api/user/:username) must:
+
+Search using case-insensitive match.
+
+Return user object including: { id, username, displayName, avatar, bio, stats }
+
+Frontend:
+
+Ensure username is extracted from route param correctly.
+
+If no user found, render friendly 404 — only if confirmed null, not just undefined during loading.
+
+🌟 2. Creator Spotlight: Can Follow Yourself
+❌ Issue: Users can follow themselves via Creator Spotlight.
+
+✅ Fix:
+
+In the "Follow" button logic:
+
+ts
+Copy
+Edit
+if (user.id === spotlightUser.id) hideFollowButton();
+👤 3. Clicking Creator Spotlight → /user/:username is Broken
+❌ Issue: Clicking spotlight user navigates to /user/:username, which errors.
+
+✅ Fix:
+
+Ensure the click action does:
+
+ts
+Copy
+Edit
+router.push(`/user/${encodeURIComponent(user.username)}`);
+Confirm spotlight data includes valid username field.
+
+🔁 4. Implement Real User Following System
+✅ Backend:
+
+POST /api/follow:
+
+ts
+Copy
+Edit
+{
+  followerId,
+  followingId
+}
+Add entry to follows table/collection.
+
+DELETE /api/unfollow
+
+GET /api/user/:id/following
+
+GET /api/user/:id/followers
+
+✅ Frontend:
+
+When visiting a user profile:
+
+Show Follow or Unfollow depending on logged-in user’s relationship.
+
+Update button state and counts optimistically on click.
+
+Track follower/following count in user stats.
+
+📱 Example User Object (After Fixes)
+ts
+Copy
+Edit
+{
+  id: "u123",
+  username: "mangaKing",
+  displayName: "Manga King",
+  avatar: "/avatars/mangaking.png",
+  bio: "I make comics!",
+  stats: {
+    followers: 209,
+    following: 42,
+    chaptersRead: 580
+  },
+  isFollowing: true, // <-- if logged-in user is following
+}
+✅ Final Result
+/user/:username loads reliably and dynamically.
+
+Creator Spotlight is fully interactive but prevents self-follow.
+
+User following system works across platform.
+
+User stats are accurate and updatable.
+

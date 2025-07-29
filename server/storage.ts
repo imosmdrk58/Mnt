@@ -80,6 +80,11 @@ export interface IStorage {
   createFollow(userId: string, targetId: string, targetType: string): Promise<Follow>;
   deleteFollow(userId: string, targetId: string, targetType: string): Promise<void>;
   getFollowedSeries(userId: string): Promise<Series[]>;
+  getFollowerCount(userId: string): Promise<number>;
+  getFollowingCount(userId: string): Promise<number>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  getUserFollowing(userId: string): Promise<User[]>;
+  getUserFollowers(userId: string): Promise<User[]>;
   
   // Bookmark operations
   createBookmark(userId: string, seriesId: string): Promise<Bookmark>;
@@ -182,7 +187,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.username}) = LOWER(${username})`);
     return user;
   }
 
@@ -1415,6 +1420,106 @@ export class DatabaseStorage implements IStorage {
       progress,
       lastReadChapter: lastReadChapter[0]?.chapterTitle || null,
     };
+  }
+
+  // New follow-related methods
+  async getFollowerCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(follows)
+      .where(
+        and(
+          eq(follows.targetId, userId),
+          eq(follows.targetType, 'user')
+        )
+      );
+    return result?.count || 0;
+  }
+
+  async getFollowingCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(follows)
+      .where(
+        and(
+          eq(follows.userId, userId),
+          eq(follows.targetType, 'user')
+        )
+      );
+    return result?.count || 0;
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const [result] = await db
+      .select()
+      .from(follows)
+      .where(
+        and(
+          eq(follows.userId, followerId),
+          eq(follows.targetId, followingId),
+          eq(follows.targetType, 'user')
+        )
+      )
+      .limit(1);
+    return !!result;
+  }
+
+  async getUserFollowing(userId: string): Promise<User[]> {
+    const followingIds = await db
+      .select({ targetId: follows.targetId })
+      .from(follows)
+      .where(
+        and(
+          eq(follows.userId, userId),
+          eq(follows.targetType, 'user')
+        )
+      );
+    
+    if (followingIds.length === 0) return [];
+    
+    return await db
+      .select({
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        isCreator: users.isCreator,
+        isEliteReader: users.isEliteReader,
+        followersCount: users.followersCount,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(inArray(users.id, followingIds.map(f => f.targetId)));
+  }
+
+  async getUserFollowers(userId: string): Promise<User[]> {
+    const followerIds = await db
+      .select({ userId: follows.userId })
+      .from(follows)
+      .where(
+        and(
+          eq(follows.targetId, userId),
+          eq(follows.targetType, 'user')
+        )
+      );
+    
+    if (followerIds.length === 0) return [];
+    
+    return await db
+      .select({
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        isCreator: users.isCreator,
+        isEliteReader: users.isEliteReader,
+        followersCount: users.followersCount,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(inArray(users.id, followerIds.map(f => f.userId)));
   }
 }
 

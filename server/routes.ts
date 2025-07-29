@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User profile route
+  // User profile route by ID
   app.get('/api/users/:id', optionalAuth, async (req, res) => {
     try {
       const user = await storage.getUserById(req.params.id);
@@ -184,6 +184,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // User profile route by username (case-insensitive)
+  app.get('/api/user/:username', optionalAuth, async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Calculate follower and following counts
+      const followerCount = await storage.getFollowerCount(user.id);
+      const followingCount = await storage.getFollowingCount(user.id);
+      
+      // Check if current user is following this profile (if authenticated)
+      let isFollowing = false;
+      if (req.user && req.user.id !== user.id) {
+        isFollowing = await storage.isFollowing(req.user.id, user.id);
+      }
+      
+      // Remove sensitive information including email for privacy
+      const { password, email, resetToken, resetTokenExpiry, ...safeUser } = user;
+      
+      res.json({
+        ...safeUser,
+        stats: {
+          followers: followerCount,
+          following: followingCount,
+          chaptersRead: user.chaptersRead || 0
+        },
+        isFollowing
+      });
+    } catch (error) {
+      console.error("Error fetching user by username:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Following system endpoints
+  app.post('/api/follow', requireAuth, async (req: any, res) => {
+    try {
+      const { followingId } = req.body;
+      const followerId = req.user.id;
+      
+      if (followerId === followingId) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+      
+      const follow = await storage.createFollow(followerId, followingId, 'user');
+      res.json({ message: "Successfully followed user", follow });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Failed to follow user" });
+    }
+  });
+
+  app.delete('/api/follow', requireAuth, async (req: any, res) => {
+    try {
+      const { followingId } = req.body;
+      const followerId = req.user.id;
+      
+      await storage.deleteFollow(followerId, followingId, 'user');
+      res.json({ message: "Successfully unfollowed user" });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Failed to unfollow user" });
+    }
+  });
+
+  app.get('/api/user/:id/following', optionalAuth, async (req, res) => {
+    try {
+      const following = await storage.getUserFollowing(req.params.id);
+      res.json(following);
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      res.status(500).json({ message: "Failed to fetch following" });
+    }
+  });
+
+  app.get('/api/user/:id/followers', optionalAuth, async (req, res) => {
+    try {
+      const followers = await storage.getUserFollowers(req.params.id);
+      res.json(followers);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+      res.status(500).json({ message: "Failed to fetch followers" });
     }
   });
 
