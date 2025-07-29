@@ -266,6 +266,17 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
   replies: many(comments),
 }));
 
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  series: one(series, {
+    fields: [reviews.seriesId],
+    references: [series.id],
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,

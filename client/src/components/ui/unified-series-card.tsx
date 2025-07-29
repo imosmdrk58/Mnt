@@ -11,10 +11,10 @@ import {
   Heart,
   Bookmark,
 } from "lucide-react";
-import type { Series } from "@shared/schema";
+import type { Series, User } from "@shared/schema";
 
 interface UnifiedSeriesCardProps {
-  series: Series;
+  series: Series & { author?: User };
   showProgress?: boolean;
   readingProgress?: number;
   onClick?: () => void;
@@ -79,16 +79,16 @@ export default function UnifiedSeriesCard({
             </div>
           )}
           
-          {/* Type Badge - Only show series type */}
+          {/* Type Badge - Glassmorphism style */}
           <div className="absolute top-2 left-2">
-            <Badge className={getTypeColor(series.type || 'unknown')}>
+            <Badge className={`${getTypeColor(series.type || 'unknown')} backdrop-blur-sm bg-opacity-90 shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:shadow-xl transition-all duration-200`}>
               {series.type ? series.type.charAt(0).toUpperCase() + series.type.slice(1) : "Unknown"}
             </Badge>
           </div>
           
-          {/* Status Badge */}
+          {/* Status Badge - Glassmorphism style */}
           <div className="absolute top-2 right-2">
-            <Badge variant="secondary" className="bg-background/80 text-foreground">
+            <Badge className="backdrop-blur-md bg-white/20 text-white border-white/30 border rounded-full px-3 py-1 font-semibold text-xs shadow-lg hover:bg-white/30 hover:shadow-xl transition-all duration-200">
               {series.status ? series.status.charAt(0).toUpperCase() + series.status.slice(1) : "Unknown"}
             </Badge>
           </div>
@@ -136,7 +136,7 @@ export default function UnifiedSeriesCard({
         
         {/* Author */}
         <p className="text-xs text-muted-foreground truncate">
-          by {series.authorId || "Unknown"}
+          by {series.author?.username || series.author?.firstName || "Unknown"}
         </p>
       </div>
     </Card>

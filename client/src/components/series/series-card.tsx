@@ -48,13 +48,13 @@ export default function SeriesCard({
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'webtoon':
-        return 'bg-accent text-accent-foreground';
+        return 'bg-purple-500/90 text-white';
       case 'manga':
-        return 'bg-secondary text-secondary-foreground';
+        return 'bg-blue-500/90 text-white';
       case 'novel':
-        return 'bg-primary text-primary-foreground';
+        return 'bg-green-500/90 text-white';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-500/90 text-white';
     }
   };
 
@@ -128,35 +128,35 @@ export default function SeriesCard({
             </div>
           )}
 
-          {/* Status Badges */}
+          {/* Status Badges - Glassmorphism style */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            <Badge className={getTypeColor(type)} variant="secondary">
+            <Badge className={`${getTypeColor(type)} backdrop-blur-md bg-opacity-90 shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:shadow-xl transition-all duration-200`}>
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </Badge>
             
             {isNew && (
-              <Badge className="bg-success text-success-foreground">
+              <Badge className="bg-emerald-500/90 text-white backdrop-blur-md shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:bg-emerald-600/90 hover:shadow-xl transition-all duration-200">
                 <Sparkles className="w-3 h-3 mr-1" />
                 New
               </Badge>
             )}
             
             {isPremium && (
-              <Badge className="bg-warning text-warning-foreground">
+              <Badge className="bg-amber-500/90 text-white backdrop-blur-md shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:bg-amber-600/90 hover:shadow-xl transition-all duration-200">
                 <Crown className="w-3 h-3 mr-1" />
                 Premium
               </Badge>
             )}
             
             {isHot && (
-              <Badge className="bg-destructive text-destructive-foreground">
+              <Badge className="bg-red-500/90 text-white backdrop-blur-md shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:bg-red-600/90 hover:shadow-xl transition-all duration-200">
                 <Flame className="w-3 h-3 mr-1" />
                 Hot
               </Badge>
             )}
             
             {isCompleted && (
-              <Badge className="bg-success text-success-foreground">
+              <Badge className="bg-blue-500/90 text-white backdrop-blur-md shadow-lg border-0 rounded-full px-3 py-1 font-semibold text-xs hover:bg-blue-600/90 hover:shadow-xl transition-all duration-200">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Complete
               </Badge>

@@ -608,14 +608,15 @@ export default function SeriesDetail() {
                       <CardContent className="p-6">
                         <div className="flex items-start space-x-4">
                           <Avatar>
+                            <AvatarImage src={review.user?.profileImageUrl} />
                             <AvatarFallback>
-                              {review.userId.charAt(0).toUpperCase()}
+                              {review.user?.username?.charAt(0).toUpperCase() ?? "?"}
                             </AvatarFallback>
                           </Avatar>
                           
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className="font-medium">{review.userId}</span>
+                              <span className="font-medium">{review.user?.username ?? "Anonymous"}</span>
                               <div className="flex items-center">
                                 {Array.from({ length: review.rating }).map((_, i) => (
                                   <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />

@@ -176,7 +176,7 @@ export class DatabaseStorage implements IStorage {
     status?: string; 
     genre?: string; 
     limit?: number 
-  }): Promise<Series[]> {
+  }): Promise<(Series & { author: User })[]> {
     const conditions = [];
     if (filters?.type) {
       conditions.push(eq(series.type, filters.type as any));
@@ -188,19 +188,67 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${series.genres} @> ARRAY[${filters.genre}]`);
     }
     
+    let baseQuery = db
+      .select({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        coverImageUrl: series.coverImageUrl,
+        type: series.type,
+        status: series.status,
+        authorId: series.authorId,
+        groupId: series.groupId,
+        genres: series.genres,
+        tags: series.tags,
+        isNSFW: series.isNSFW,
+        viewCount: series.viewCount,
+        likeCount: series.likeCount,
+        bookmarkCount: series.bookmarkCount,
+        rating: series.rating,
+        ratingCount: series.ratingCount,
+        chapterCount: series.chapterCount,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
+        author: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
+      .from(series)
+      .innerJoin(users, eq(series.authorId, users.id))
+      .orderBy(desc(series.updatedAt));
+
     if (conditions.length > 0) {
-      let query = db.select().from(series).where(and(...conditions)).orderBy(desc(series.updatedAt));
-      if (filters?.limit) {
-        return await query.limit(filters.limit);
-      }
-      return await query;
-    } else {
-      let query = db.select().from(series).orderBy(desc(series.updatedAt));
-      if (filters?.limit) {
-        return await query.limit(filters.limit);
-      }
-      return await query;
+      baseQuery = baseQuery.where(and(...conditions)) as any;
     }
+    
+    if (filters?.limit) {
+      return await baseQuery.limit(filters.limit);
+    }
+    return await baseQuery;
   }
 
   async createSeries(seriesData: InsertSeries): Promise<Series> {
@@ -235,11 +283,59 @@ export class DatabaseStorage implements IStorage {
     }).onConflictDoNothing();
   }
 
-  async getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]> {
+  async getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<(Series & { author: User })[]> {
     const limit = filters?.limit || 10;
     return await db
-      .select()
+      .select({
+        id: series.id,
+        title: series.title,
+        description: series.description,
+        coverImageUrl: series.coverImageUrl,
+        type: series.type,
+        status: series.status,
+        authorId: series.authorId,
+        groupId: series.groupId,
+        genres: series.genres,
+        tags: series.tags,
+        isNSFW: series.isNSFW,
+        viewCount: series.viewCount,
+        likeCount: series.likeCount,
+        bookmarkCount: series.bookmarkCount,
+        rating: series.rating,
+        ratingCount: series.ratingCount,
+        chapterCount: series.chapterCount,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
+        author: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
       .from(series)
+      .innerJoin(users, eq(series.authorId, users.id))
       .orderBy(desc(series.viewCount), desc(series.bookmarkCount))
       .limit(limit);
   }
@@ -368,10 +464,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Review operations
-  async getReviewsBySeriesId(seriesId: string): Promise<Review[]> {
+  async getReviewsBySeriesId(seriesId: string): Promise<(Review & { user: User })[]> {
     return await db
-      .select()
+      .select({
+        id: reviews.id,
+        seriesId: reviews.seriesId,
+        userId: reviews.userId,
+        rating: reviews.rating,
+        content: reviews.content,
+        likeCount: reviews.likeCount,
+        createdAt: reviews.createdAt,
+        updatedAt: reviews.updatedAt,
+        user: {
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          coinBalance: users.coinBalance,
+          isCreator: users.isCreator,
+          isEliteReader: users.isEliteReader,
+          followersCount: users.followersCount,
+          emailVerified: users.emailVerified,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+          creatorDisplayName: users.creatorDisplayName,
+          creatorBio: users.creatorBio,
+          creatorPortfolioUrl: users.creatorPortfolioUrl,
+          creatorSocialMediaUrl: users.creatorSocialMediaUrl,
+          creatorContentTypes: users.creatorContentTypes,
+          creatorExperience: users.creatorExperience,
+          creatorMotivation: users.creatorMotivation,
+          creatorApplicationStatus: users.creatorApplicationStatus,
+          creatorApplicationDate: users.creatorApplicationDate,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          password: users.password,
+        }
+      })
       .from(reviews)
+      .innerJoin(users, eq(reviews.userId, users.id))
       .where(eq(reviews.seriesId, seriesId))
       .orderBy(desc(reviews.createdAt));
   }
