@@ -53,7 +53,8 @@ export interface IStorage {
   getTrendingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]>;
   getRisingSeries(filters?: { timeframe?: string; limit?: number }): Promise<Series[]>;
   getTrendingCreators(filters?: { timeframe?: string; limit?: number }): Promise<User[]>;
-  searchSeries(query: string): Promise<Series[]>;
+  searchSeries(query: string, filters?: { type?: string; status?: string; genre?: string }): Promise<Series[]>;
+  searchCreators(query: string): Promise<User[]>;
   
   // Chapter operations
   getChapter(id: string): Promise<Chapter | undefined>;
@@ -247,16 +248,49 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async searchSeries(query: string): Promise<Series[]> {
+  async searchSeries(query: string, filters?: { type?: string; status?: string; genre?: string }): Promise<Series[]> {
+    let whereConditions = or(
+      like(series.title, `%${query}%`),
+      like(series.description, `%${query}%`)
+    );
+
+    // Add filters if provided
+    if (filters?.type) {
+      whereConditions = and(whereConditions, eq(series.type, filters.type));
+    }
+    if (filters?.status) {
+      whereConditions = and(whereConditions, eq(series.status, filters.status));
+    }
+    if (filters?.genre) {
+      whereConditions = and(whereConditions, like(series.genres, `%${filters.genre}%`));
+    }
+
     return await db
       .select()
       .from(series)
+      .where(whereConditions)
+      .orderBy(desc(series.viewCount))
+      .limit(20);
+  }
+
+  async searchCreators(query: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
       .where(
-        or(
-          like(series.title, `%${query}%`),
-          like(series.description, `%${query}%`)
+        and(
+          eq(users.isCreator, true),
+          or(
+            like(users.username, `%${query}%`),
+            like(users.firstName, `%${query}%`),
+            like(users.lastName, `%${query}%`),
+            like(users.creatorDisplayName, `%${query}%`),
+            like(users.creatorBio, `%${query}%`)
+          )
         )
-      );
+      )
+      .orderBy(desc(users.followersCount))
+      .limit(20);
   }
 
   // Chapter operations

@@ -1,0 +1,148 @@
+You are building a production-grade manga/webtoon/novel publishing platform (inspired by Tapas, MangaDex, Webtoon), and the following critical issues, features, and enhancements must be implemented properly using working logic (not mocks), with full backend and frontend integration.
+
+🔥 CRITICAL BUG FIXES
+Invalid Date Formatting:
+
+All dates across the platform are showing "Invalid Date".
+
+Use a proper date parser like dayjs, date-fns, or Intl.DateTimeFormat.
+
+Ensure all backend timestamps are passed in proper ISO or UNIX format, and all components format with a fallback, e.g.:
+
+ts
+Copy
+Edit
+dayjs(date).format('MMM D, YYYY') || "Unknown"
+Create Series – API Input Validation Error:
+
+Error: 400: {"message": "Failed to create series"...}
+
+Cause: Field isNSFW is expecting a boolean, but receiving a string.
+
+Fix:
+
+Convert checkbox/switch UI to properly return true/false.
+
+Ensure coverImage and title are required fields (both backend + frontend).
+
+Add clear error messages in the UI on failed submission.
+
+💳 COINS SYSTEM (REAL, NOT MOCK)
+Add Working Coins Purchase System:
+
+Clicking the coins icon in the navbar should route to /coins.
+
+Create a real, styled purchase coins page with selectable coin bundles (e.g., 100, 500, 1000 coins).
+
+Integrate Stripe Checkout or Stripe Payments with working logic:
+
+After purchase, update user's coinBalance in database.
+
+Show confirmation and transaction log in user's settings/account.
+
+🧑‍🤝‍🧑 USER PROFILE FIXES
+Fix Profile Privacy Issues:
+
+Do not show user email anywhere on /user/:userID.
+
+Display:
+
+@username instead of email.
+
+Profile bio (if set).
+
+Badge tags (e.g., Author, Reader, Admin).
+
+Groups they belong to.
+
+Total followers / total series / join date.
+
+Show Current User’s Username:
+
+Display logged-in user’s username visibly on:
+
+Navbar dropdown.
+
+Profile page.
+
+Comments, reviews, etc.
+
+💰 PREMIUM + AD REVENUE SYSTEM (REAL DATA)
+Premium Chapters:
+
+Chapters should support a premium: true flag.
+
+If a chapter is premium:
+
+User must have enough coins to unlock it.
+
+Deduct coins upon unlock.
+
+Store unlock log per user.
+
+Premium chapter creation only enabled for series with ≥ 500 followers.
+
+Ad Revenue Dashboard:
+
+Authors should see Ad Revenue tab under /creator/dashboard.
+
+Only enabled for series with ≥ 1000 followers.
+
+Must show real ad data (integrate with a dummy ad impression generator for now if needed):
+
+Impressions, click-through rate (CTR), estimated revenue.
+
+Daily/weekly graph and table.
+
+Use real stats from backend, not mock JSON.
+
+🔍 SEARCH, ERROR PAGES, & RESPONSIVENESS
+Fix Search Route on Mobile:
+
+The search icon on mobile currently routes to /search → 404 error.
+
+Create a working /search route with a real search UI:
+
+Search by title, author, group, genre, tags.
+
+Support for instant results or submit-to-search.
+
+Custom 404 Page:
+
+Replace generic 404 with a fully custom, stylized page.
+
+Include:
+
+An illustration or animated image (themed to comics).
+
+Text like: “Lost in the Panels?”
+
+Button to go back to homepage or discover new series.
+
+Responsive and dark/light mode compatible.
+
+🧠 BONUS FEATURES (TO ADD NOW)
+Auto Badge Assignment (Real Logic):
+
+Assign badges dynamically to authors/groups:
+
+Staff Pick: Manually toggled by admin.
+
+Rising: If >1000 views in past 7 days.
+
+Elite: If ≥1000 followers.
+
+Display next to username and series cards.
+
+Remove badges when conditions are no longer met.
+
+Group Spotlight System:
+
+Spotlight on homepage should support both authors and groups.
+
+Groups must be real entities created from dashboard.
+
+If a group’s series is trending, the group appears in the spotlight.
+
+✅ END GOAL
+All of the above must be implemented using real data, not mockups, with full working auth, database connections, and dynamic behavior. Ensure robust error handling, clean UI, and performance optimization.

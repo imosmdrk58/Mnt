@@ -18,6 +18,8 @@ import Profile from "@/pages/profile";
 import BecomeCreator from "@/pages/become-creator";
 import Browse from "@/pages/browse";
 import Trending from "@/pages/trending";
+import CoinsPage from "@/pages/coins";
+import SearchPage from "@/pages/search";
 
 function Router() {
   return (
@@ -27,7 +29,9 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/browse" component={Browse} />
         <Route path="/trending" component={Trending} />
+        <Route path="/search" component={SearchPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/coins" component={CoinsPage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />
         

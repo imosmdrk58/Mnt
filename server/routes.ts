@@ -173,12 +173,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       
-      // Validate input
+      // Validate input - convert form data types
       const seriesData = insertSeriesSchema.parse({
         ...req.body,
         authorId: userId,
         genres: req.body.genres ? JSON.parse(req.body.genres) : [],
         tags: req.body.tags ? JSON.parse(req.body.tags) : [],
+        isNSFW: req.body.isNSFW === 'true' || req.body.isNSFW === true,
         coverImageUrl: req.file ? `/uploads/${req.file.filename}` : null,
       });
 
@@ -456,6 +457,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching transactions:", error);
       res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  // Coins purchase endpoint
+  app.post('/api/coins/purchase', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { packageId, amount, coinAmount } = req.body;
+      
+      if (!packageId || !amount || !coinAmount) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // In a real implementation, this would integrate with Stripe
+      // For now, we'll simulate a successful payment
+      const transaction = await storage.createTransaction({
+        userId,
+        amount: coinAmount, // Store coin amount in amount field
+        type: 'purchase',
+        description: `Purchased ${coinAmount} coins`,
+      });
+
+      // Coin balance is automatically updated by createTransaction
+
+      res.json({ 
+        success: true, 
+        transaction,
+        coinAmount,
+        message: "Purchase completed successfully" 
+      });
+    } catch (error) {
+      console.error("Error processing coin purchase:", error);
+      res.status(500).json({ message: "Failed to process purchase" });
+    }
+  });
+
+  // Search endpoint
+  app.get('/api/search', async (req, res) => {
+    try {
+      const { q: query, type, status, genre } = req.query as {
+        q?: string;
+        type?: string;
+        status?: string;
+        genre?: string;
+      };
+
+      if (!query || query.length < 3) {
+        return res.json({ series: [], creators: [], groups: [] });
+      }
+
+      // Search series
+      const series = await storage.searchSeries(query, { type, status, genre });
+      
+      // Search creators  
+      const creators = await storage.searchCreators(query);
+      
+      // Groups search (placeholder for now)
+      const groups = [];
+
+      res.json({ series, creators, groups });
+    } catch (error) {
+      console.error("Error performing search:", error);
+      res.status(500).json({ message: "Search failed" });
     }
   });
 

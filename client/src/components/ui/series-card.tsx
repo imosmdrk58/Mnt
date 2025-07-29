@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Eye, Heart, BookOpen, Star, Clock, User } from "lucide-react";
+import { format, isValid, parseISO } from "date-fns";
 import type { Series } from "@shared/schema";
 
 interface SeriesCardProps {
@@ -16,6 +17,16 @@ export function SeriesCard({ series, layout = "grid" }: SeriesCardProps) {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
+  };
+
+  const formatDate = (date: string | Date | null | undefined) => {
+    if (!date) return "Unknown";
+    try {
+      const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+      return isValid(parsedDate) ? format(parsedDate, 'MMM d, yyyy') : "Unknown";
+    } catch {
+      return "Unknown";
+    }
   };
 
   const getStatusColor = (status: string) => {
