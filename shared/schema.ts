@@ -10,6 +10,7 @@ import {
   boolean,
   decimal,
   pgEnum,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -192,7 +193,9 @@ export const readingProgress = pgTable("reading_progress", {
   chapterId: varchar("chapter_id").notNull().references(() => chapters.id),
   progress: decimal("progress", { precision: 5, scale: 2 }).default('0.00'), // 0-100%
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  uniqueUserSeriesChapter: unique("unique_user_series_chapter").on(table.userId, table.seriesId, table.chapterId),
+}));
 
 // Chapter likes table
 export const chapterLikes = pgTable("chapter_likes", {

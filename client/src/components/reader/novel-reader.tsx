@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Settings,
   Type,
@@ -164,15 +166,7 @@ export default function NovelReader({
     }
   };
 
-  // Parse markdown-like content to HTML
-  const parseContent = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/`(.*?)`/g, '<code>$1</code>') // Code
-      .replace(/\n\n/g, '</p><p>') // Paragraphs
-      .replace(/\n/g, '<br />'); // Line breaks
-  };
+  // We'll use ReactMarkdown for proper markdown rendering
 
   const getThemeClasses = () => {
     switch (settings.theme) {
@@ -351,15 +345,55 @@ export default function NovelReader({
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div 
             ref={contentRef}
-            className="prose prose-lg max-w-none"
+            className="prose prose-lg max-w-none dark:prose-invert"
             style={{
               fontSize: 'inherit',
               lineHeight: 'inherit',
             }}
-            dangerouslySetInnerHTML={{
-              __html: `<p>${parseContent(content)}</p>`
-            }}
-          />
+          >
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => (
+                  <h1 style={{ fontSize: `${settings.fontSize + 8}px`, lineHeight: settings.lineHeight }}>
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 style={{ fontSize: `${settings.fontSize + 4}px`, lineHeight: settings.lineHeight }}>
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 style={{ fontSize: `${settings.fontSize + 2}px`, lineHeight: settings.lineHeight }}>
+                    {children}
+                  </h3>
+                ),
+                p: ({ children }) => (
+                  <p style={{ fontSize: 'inherit', lineHeight: 'inherit' }}>
+                    {children}
+                  </p>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-muted pl-4 italic my-4 text-muted-foreground">
+                    {children}
+                  </blockquote>
+                ),
+                code: ({ children }) => (
+                  <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto my-4">
+                    {children}
+                  </pre>
+                ),
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
           
           {/* End of chapter indicator */}
           <div className="py-8 text-center">

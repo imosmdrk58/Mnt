@@ -1,0 +1,78 @@
+🔧 FINAL FIX PROMPT — Profile Stats, Novel System, Reader UX, Comments, Ad Dashboard
+📊 1. Profile Stats (Fix: Real Data)
+Current data is mock/fake (e.g., reading streak, chapters read, series followed, views this week).
+
+🔁 Replace with real backend data from reading activity and interactions.
+
+✅ Examples:
+
+"Chapters Read This Week" → count from fully-read chapters (scroll 100%).
+
+"Reading Streak" → track consecutive days with at least 1 chapter read.
+
+“Total Likes Given” → from chapter/series likes.
+
+“Series Followed” → live count, not hardcoded.
+
+📖 2. Novel Chapters (Fix: Input & Output)
+Currently uses image uploads like manga/webtoon — incorrect for novels.
+
+✅ Change to:
+
+Markdown Text Editor for input (e.g., react-markdown-editor-lite, TipTap, etc.).
+
+Reader should render styled markdown, with headings, bold, lists, etc.
+
+Do not store as image blobs, store text content.
+
+🧭 3. Reader UI Behavior (Fix: Scroll Detection)
+Currently:
+
+Reader UI does not disappear when scrolling.
+
+Or disappears too quickly.
+
+✅ Correct behavior (like MangaDex):
+
+Reader UI (top/bottom overlays) should disappear when scrolling down.
+
+Stay visible until scroll resumes, or user taps screen again.
+
+Add a manual toggle button to show/hide menu.
+
+💬 4. Comments (Fix Show + Submit Crash)
+Show Comments button still crashes or does nothing.
+
+commentMutation error still occurs.
+
+✅ Fix:
+
+Properly define commentMutation with useMutation() hook.
+
+Ensure commentText is state-bound, commentMutation.mutate({ text }) sends correct payload.
+
+Re-fetch comments on success.
+
+Render comment thread under chapter.
+
+📈 5. Ad Dashboard Unlock (Feature Implementation)
+Ad dashboard should unlock when a series reaches 1000 followers.
+
+✅ Requirements:
+
+Add a check on creator dashboard:
+
+ts
+Copy
+Edit
+if (series.followers >= 1000) showAdDashboard = true;
+Display dashboard tab/button for eligible creators only.
+
+Allow:
+
+Ad impressions & click tracking.
+
+Revenue analytics.
+
+Ad settings (enable/disable, sponsor messages, etc.)
+

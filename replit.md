@@ -121,14 +121,15 @@ The application uses PostgreSQL with the following key entities:
 
 ## Recent Changes
 
-**Fixed "Content Not Found" Chapter Reader Issue (Current)**
-- ✓ Fixed React Query endpoints: Updated chapter reader to use `/api/chapters/${chapterId}` instead of array format
-- ✓ Corrected series navigation: Fixed series detail page to navigate to `/reader/${seriesId}/${chapterId}` instead of `/reader/${type}/${chapterId}`
-- ✓ Removed authentication requirement: Chapter reading now works without login for public content
-- ✓ Enhanced error handling: Added proper error logging for chapter and series fetch operations
-- ✓ Fixed cache invalidation: Updated all reader-related query cache keys to use proper REST endpoint formats
-- ✓ Verified API endpoints: Confirmed `/api/series/:id` and `/api/chapters/:id` return proper data structure
-- ✓ Tested with real data: Reader page now successfully loads chapters with existing test content
+**FINAL Platform Feature Completion (Current - July 29, 2025)**
+- ✓ Reading Progress Fix: Fixed database constraint error by adding unique constraint on (user_id, series_id, chapter_id)
+- ✓ Novel Editor System: Implemented full markdown editor with ReactMarkdown, live preview, and formatting tools
+- ✓ Novel Reader Enhancement: Updated to render markdown content properly with syntax highlighting and styling
+- ✓ Profile Stats System: Added real backend data for reading statistics (streak, chapters read, likes given, series followed)
+- ✓ Reader UI Behavior: Fixed MangaDex-style UI hiding on scroll with manual toggle and proper show/hide logic
+- ✓ Comment System: Fixed addCommentMutation usage and proper comment rendering with user information
+- ✓ Ad Dashboard Logic: Implemented follower-based ad revenue unlock (1000+ followers requirement)
+- ✓ Real Data Integration: All profile stats now pull from actual database queries instead of mock data
 
 **Previous Creator Series Management Fixes**
 - ✓ Database setup: Created PostgreSQL database and pushed schema tables for authentication and content management

@@ -740,6 +740,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile stats endpoint
+  app.get('/api/user/profile-stats', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const profileStats = await storage.getProfileStats(userId);
+      res.json(profileStats);
+    } catch (error) {
+      console.error("Error fetching profile stats:", error);
+      res.status(500).json({ message: "Failed to fetch profile stats" });
+    }
+  });
+
   // Create Stripe Checkout Session for coin purchase
   app.post('/api/coins/create-checkout-session', requireAuth, async (req: any, res) => {
     try {

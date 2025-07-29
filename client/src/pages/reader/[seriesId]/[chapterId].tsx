@@ -90,30 +90,43 @@ export default function Reader() {
     },
   });
 
-  // Handle scroll-based UI hiding (only hide on scroll, not on timer)
+  // Handle scroll-based UI hiding - MangaDex style behavior
   useEffect(() => {
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const currentScrollY = target.scrollTop || window.scrollY;
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
       
-      // Only hide UI if manually shown and significant scroll movement detected
-      if (showUI && !uiToggleManual && Math.abs(currentScrollY - lastScrollY) > 50) {
-        setShowUI(false);
+      // Hide UI when scrolling down (unless manually toggled)
+      if (!uiToggleManual && Math.abs(currentScrollY - lastScrollY) > 10) {
+        if (currentScrollY > lastScrollY && showUI) {
+          // Scrolling down - hide UI
+          setShowUI(false);
+        } else if (currentScrollY < lastScrollY && !showUI) {
+          // Scrolling up - show UI briefly
+          setShowUI(true);
+          // Auto-hide again after scroll stops
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            if (!uiToggleManual) {
+              setShowUI(false);
+            }
+          }, 2000);
+        }
       }
       
       setLastScrollY(currentScrollY);
     };
 
-    // First try to find the main reader container
-    const container = document.querySelector('.fixed.inset-0.overflow-y-auto') as HTMLElement;
-    if (container) {
-      container.addEventListener('scroll', handleScroll, { passive: true });
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-    
-    // Fallback to window scroll
+    // Listen to scroll events
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    document.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
   }, [lastScrollY, showUI, uiToggleManual]);
 
   // Initialize chapter data and check like status
@@ -137,10 +150,15 @@ export default function Reader() {
   }, [likeStatus]);
 
   // Toggle UI visibility (manual toggle stays visible until scroll)
-  const toggleUI = () => {
+  const handleUIToggle = () => {
     const newShowUI = !showUI;
     setShowUI(newShowUI);
     setUiToggleManual(newShowUI);  // Track manual toggles
+    
+    // If manually hiding, allow auto-show on scroll up
+    if (!newShowUI) {
+      setTimeout(() => setUiToggleManual(false), 1000);
+    }
   };
 
   // Fetch comments
@@ -401,7 +419,7 @@ export default function Reader() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto overflow-x-hidden" onClick={toggleUI} style={{ overscrollBehavior: 'none' }}>
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto overflow-x-hidden" onClick={handleUIToggle} style={{ overscrollBehavior: 'none' }}>
       {/* Floating Menu Button - Always Visible */}
       {!showUI && (
         <Button
