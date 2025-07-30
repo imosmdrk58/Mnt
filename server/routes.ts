@@ -89,17 +89,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/setup/validate-db', async (req, res) => {
     try {
+      console.log("Received validation request:", req.body);
       const { databaseUrl } = req.body;
       
-      if (!databaseUrl) {
+      if (!databaseUrl || databaseUrl.trim() === '') {
         return res.status(400).json({ valid: false, error: "Database URL is required" });
       }
       
+      console.log("Validating database URL:", databaseUrl.substring(0, 20) + "...");
       const isValid = await installManager.validateDatabaseConnection(databaseUrl);
-      res.json({ valid: isValid });
+      
+      if (isValid) {
+        res.json({ valid: true, message: "Database connection successful" });
+      } else {
+        res.json({ valid: false, error: "Unable to connect to database. Please check your connection string and ensure the database is accessible." });
+      }
     } catch (error) {
       console.error("Database validation error:", error);
-      res.json({ valid: false, error: "Database validation failed" });
+      res.json({ valid: false, error: `Database validation failed: ${(error as Error).message}` });
+    }
+  });
+
+  // Test endpoint to validate current environment database
+  app.get('/api/setup/test-current-db', async (req, res) => {
+    try {
+      const currentDbUrl = process.env.DATABASE_URL;
+      if (!currentDbUrl) {
+        return res.json({ valid: false, error: "No DATABASE_URL environment variable set" });
+      }
+      
+      console.log("Testing current database connection...");
+      const isValid = await installManager.validateDatabaseConnection(currentDbUrl);
+      res.json({ 
+        valid: isValid, 
+        message: isValid ? "Current database connection works" : "Current database connection failed",
+        hasDbUrl: !!currentDbUrl
+      });
+    } catch (error) {
+      console.error("Current database test error:", error);
+      res.json({ valid: false, error: `Database test failed: ${(error as Error).message}` });
     }
   });
 

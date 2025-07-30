@@ -67,6 +67,12 @@ export async function setupMiddleware(req: Request, res: Response, next: NextFun
     return next();
   }
 
+  // Also skip for any other API routes during development to prevent blocking
+  if (process.env.NODE_ENV === 'development' && path.startsWith('/api/')) {
+    console.log(`Setup middleware: Allowing API route during development: ${path}`);
+    return next();
+  }
+
   try {
     const setupStatus = await checkSetupStatus();
     

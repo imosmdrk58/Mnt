@@ -15,16 +15,53 @@ export class InstallManager {
   private db: any = null;
 
   async validateDatabaseConnection(databaseUrl: string): Promise<boolean> {
+    if (!databaseUrl || databaseUrl.trim() === '') {
+      return false;
+    }
+
     try {
-      const testPool = new Pool({ connectionString: databaseUrl });
+      // Validate URL format first
+      const url = new URL(databaseUrl);
+      if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
+        console.error("Invalid database protocol. Must be postgres:// or postgresql://");
+        return false;
+      }
+
+      const testPool = new Pool({ 
+        connectionString: databaseUrl,
+        connectionTimeoutMillis: 10000, // 10 second timeout
+        idleTimeoutMillis: 5000, // 5 second idle timeout
+      });
+      
       const testDb = drizzle({ client: testPool, schema });
       
-      // Test connection with a simple query
-      await testDb.execute(sql`SELECT 1`);
+      // Test connection with a simple query with timeout
+      const queryPromise = testDb.execute(sql`SELECT 1 as test`);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 15000)
+      );
+      
+      await Promise.race([queryPromise, timeoutPromise]);
       await testPool.end();
+      
+      console.log("Database connection validated successfully");
       return true;
     } catch (error) {
       console.error("Database validation failed:", error);
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('ENOTFOUND')) {
+          console.error("DNS resolution failed - check hostname");
+        } else if (error.message.includes('ECONNREFUSED')) {
+          console.error("Connection refused - check if database is running");
+        } else if (error.message.includes('timeout')) {
+          console.error("Connection timeout - check network connectivity");
+        } else if (error.message.includes('authentication')) {
+          console.error("Authentication failed - check credentials");
+        }
+      }
+      
       return false;
     }
   }
