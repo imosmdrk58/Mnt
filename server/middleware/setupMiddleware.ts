@@ -57,10 +57,13 @@ export async function setupMiddleware(req: Request, res: Response, next: NextFun
   if (path.startsWith('/setup') || path.startsWith('/api/setup') || 
       path.startsWith('/assets') || path.startsWith('/node_modules') ||
       path.startsWith('/@vite') || path.startsWith('/src') ||
+      path.startsWith('/@id') || path.startsWith('/@fs') ||
+      path.startsWith('/@react-refresh') || path.startsWith('/__vite') ||
       path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.ico') ||
       path.endsWith('.ts') || path.endsWith('.tsx') || path.endsWith('.jsx') ||
       path.endsWith('.map') || path.endsWith('.woff') || path.endsWith('.woff2') ||
-      path.includes('/uploads/')) {
+      path.endsWith('.mjs') || path.endsWith('.json') ||
+      path.includes('/uploads/') || path.includes('.vite/')) {
     return next();
   }
 
