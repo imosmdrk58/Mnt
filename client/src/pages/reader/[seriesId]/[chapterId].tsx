@@ -343,7 +343,7 @@ export default function Reader() {
   // Track reading mutation for reading streak
   const trackReadingMutation = useMutation({
     mutationFn: async ({ chapterId, seriesId }: { chapterId: string; seriesId: string }) => {
-      return apiRequest('/api/track-reading', 'POST', { chapterId, seriesId });
+      return apiRequest('POST', '/api/track-reading', { chapterId, seriesId });
     },
     onSuccess: () => {
       console.log('Reading tracked successfully');

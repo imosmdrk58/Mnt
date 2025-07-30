@@ -1183,20 +1183,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reading tracking endpoints
-  app.post('/api/track-reading', requireAuth, async (req: any, res) => {
+  // Track reading endpoint - records reading activity at 90% completion
+  app.post('/api/track-reading', requireAuth, async (req, res) => {
     try {
+      const userId = req.user!.id;
       const { chapterId, seriesId } = req.body;
-      const userId = req.user.id;
-      
+
       if (!chapterId || !seriesId) {
-        return res.status(400).json({ message: "Chapter ID and Series ID are required" });
+        return res.status(400).json({ message: "Missing chapterId or seriesId" });
       }
-      
-      // Track the reading event
-      await storage.trackReading({ userId, chapterId, seriesId });
-      
-      res.json({ message: "Reading tracked successfully" });
+
+      // Add reading history record
+      await storage.addReadingHistory(userId, chapterId, seriesId);
+
+      // Increment chapter view count
+      await storage.incrementChapterViews(chapterId);
+
+      // Increment series total views
+      await storage.incrementSeriesViews(seriesId);
+
+      res.json({ success: true, message: "Reading tracked successfully" });
     } catch (error) {
       console.error("Error tracking reading:", error);
       res.status(500).json({ message: "Failed to track reading" });

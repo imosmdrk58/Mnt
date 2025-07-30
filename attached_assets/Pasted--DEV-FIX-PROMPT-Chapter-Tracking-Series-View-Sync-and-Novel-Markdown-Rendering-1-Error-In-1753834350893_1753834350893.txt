@@ -1,0 +1,77 @@
+🔧 DEV FIX PROMPT — Chapter Tracking, Series View Sync, and Novel Markdown Rendering
+🛑 1. Error: Invalid HTTP Method for fetch
+Error Message:
+'/api/track-reading' is not a valid HTTP method.
+This occurs because method passed to fetch() is likely undefined.
+
+✅ Fix:
+In queryClient.ts, ensure method has a default:
+
+ts
+Copy
+Edit
+export async function apiRequest(
+  url: string,
+  method: "GET" | "POST" | "PUT" | "DELETE" = "GET", // ✅ default
+  data?: unknown
+): Promise<Response> {
+  const res = await fetch(url, {
+    method, // ensure this is always a valid HTTP verb
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  return res;
+}
+And ensure mutation correctly calls POST:
+
+ts
+Copy
+Edit
+mutationFn: () => apiRequest("/api/track-reading", "POST", {
+  userId, chapterId, seriesId, timestamp: Date.now()
+})
+👁️‍🗨️ 2. Chapter Views Not Syncing to Series Total Views
+Each time a chapter view is counted:
+
+✅ Increment that chapter’s viewCount
+
+✅ Also increment its parent series' totalViews in the DB
+
+Backend Logic (e.g. in /api/track-reading)
+ts
+Copy
+Edit
+await db.chapter.update({
+  where: { id: chapterId },
+  data: { viewCount: { increment: 1 } },
+});
+
+await db.series.update({
+  where: { id: seriesId },
+  data: { totalViews: { increment: 1 } },
+});
+📖 3. Markdown Editor for Novels
+On Chapter Creation Page (Novels only):
+If series type is "novel":
+
+Use a Markdown editor like react-markdown-editor-lite
+
+Save novel content as markdown (not images)
+
+On Reader Page:
+tsx
+Copy
+Edit
+import ReactMarkdown from "react-markdown";
+
+if (series.type === "novel") {
+  return <ReactMarkdown>{chapter.textMarkdown}</ReactMarkdown>;
+}
+✅ Summary Fixes Checklist
+Issue	Fix
+fetch() method undefined	Ensure method param defaults to "GET"
+Chapter view not syncing	Increment both chapter and series view counts
+Novels show text not images	Render saved markdown using ReactMarkdown
+No novel markdown editor	Add markdown input on novel chapter creation
+Tracking fails on read	Use POST correctly in track-reading endpoint

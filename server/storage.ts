@@ -1221,6 +1221,50 @@ export class DatabaseStorage implements IStorage {
     return reading;
   }
 
+  async addReadingHistory(userId: string, chapterId: string, seriesId: string): Promise<void> {
+    // Check if this reading history already exists to prevent duplicates
+    const existing = await db
+      .select()
+      .from(readingHistory)
+      .where(
+        and(
+          eq(readingHistory.userId, userId),
+          eq(readingHistory.chapterId, chapterId),
+          eq(readingHistory.seriesId, seriesId)
+        )
+      )
+      .limit(1);
+
+    if (existing.length === 0) {
+      await db
+        .insert(readingHistory)
+        .values({
+          userId,
+          chapterId,
+          seriesId,
+          createdAt: new Date()
+        });
+    }
+  }
+
+  async incrementChapterViews(chapterId: string): Promise<void> {
+    await db
+      .update(chapters)
+      .set({ 
+        viewCount: sql`COALESCE(${chapters.viewCount}, 0) + 1` 
+      })
+      .where(eq(chapters.id, chapterId));
+  }
+
+  async incrementSeriesViews(seriesId: string): Promise<void> {
+    await db
+      .update(series)
+      .set({ 
+        viewCount: sql`COALESCE(${series.viewCount}, 0) + 1` 
+      })
+      .where(eq(series.id, seriesId));
+  }
+
   async getUserReadingHistory(userId: string, limit: number = 50): Promise<ReadingHistory[]> {
     return await db
       .select()
