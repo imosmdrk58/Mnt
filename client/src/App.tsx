@@ -25,6 +25,7 @@ import UserProfilePage from "@/pages/user/[id]";
 import CreateChapter from "@/pages/creator/create-chapter";
 import SeriesManage from "@/pages/creator/series-manage";
 import SeriesCreateChapter from "@/pages/creator/series-create-chapter";
+import SetupPage from "@/pages/setup";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/search" component={SearchPage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/coins" component={CoinsPage} />
+        <Route path="/setup" component={SetupPage} />
         <Route path="/user/:username" component={UserProfilePage} />
         <Route path="/series/:id" component={SeriesDetail} />
         <Route path="/reader/:seriesId/:chapterId" component={Reader} />

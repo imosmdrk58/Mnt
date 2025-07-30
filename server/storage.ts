@@ -36,9 +36,11 @@ import {
   type Transaction,
 } from "@shared/schema";
 import { db } from "./db";
+import { checkSetupStatus } from "./middleware/setupMiddleware";
 import { eq, desc, asc, and, or, like, sql, inArray, gte } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import MemoryStore from "memorystore";
 
 export interface IStorage {
   // Session store
@@ -168,11 +170,28 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    const PostgresSessionStore = connectPg(session);
-    this.sessionStore = new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-    });
+    this.initializeSessionStore();
+  }
+
+  private initializeSessionStore() {
+    if (process.env.DATABASE_URL) {
+      const PostgresSessionStore = connectPg(session);
+      this.sessionStore = new PostgresSessionStore({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: true,
+      });
+    } else {
+      // Use in-memory session store during installer mode
+      const InMemoryStore = MemoryStore(session);
+      this.sessionStore = new InMemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      });
+    }
+  }
+
+  reinitializeSessionStore() {
+    // Reinitialize session store after database is configured
+    this.initializeSessionStore();
   }
 
   // User operations
@@ -765,7 +784,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(series)
-      .where(inArray(series.id, followedSeriesIds.map(f => f.seriesId)));
+      .where(inArray(series.id, followedSeriesIds.map((f: any) => f.seriesId)));
   }
 
   // Bookmark operations
@@ -812,7 +831,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(series)
-      .where(inArray(series.id, bookmarkedSeriesIds.map(b => b.seriesId)));
+      .where(inArray(series.id, bookmarkedSeriesIds.map((b: any) => b.seriesId)));
   }
 
   // Like operations
@@ -1534,7 +1553,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(readingProgress.updatedAt))
       .limit(10);
 
-    return continueReading.map(item => ({
+    return continueReading.map((item: any) => ({
       seriesId: item.seriesId,
       seriesTitle: item.seriesTitle || 'Unknown Series',
       seriesCover: item.seriesCover || '',
@@ -1669,7 +1688,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: users.createdAt,
       })
       .from(users)
-      .where(inArray(users.id, followingIds.map(f => f.targetId)));
+      .where(inArray(users.id, followingIds.map((f: any) => f.targetId)));
   }
 
   async getUserFollowers(userId: string): Promise<User[]> {
@@ -1698,7 +1717,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: users.createdAt,
       })
       .from(users)
-      .where(inArray(users.id, followerIds.map(f => f.userId)));
+      .where(inArray(users.id, followerIds.map((f: any) => f.userId)));
   }
 }
 

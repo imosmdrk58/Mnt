@@ -3,7 +3,10 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, optionalAuth } from "./auth";
-import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema, type Series } from "@shared/schema";
+import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema, installerSetupSchema, type Series } from "@shared/schema";
+import { installManager } from "./installManager";
+import { checkSetupStatus, clearSetupStatusCache } from "./middleware/setupMiddleware";
+import { initializeDatabase } from "./db";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -31,6 +34,75 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup/Installation API routes (must be before auth middleware)
+  app.get('/api/setup/status', async (req, res) => {
+    try {
+      const setupStatus = await checkSetupStatus();
+      res.json(setupStatus);
+    } catch (error) {
+      console.error("Setup status check failed:", error);
+      res.status(500).json({ error: "Failed to check setup status" });
+    }
+  });
+
+  app.post('/api/setup/install', async (req, res) => {
+    try {
+      const setupData = installerSetupSchema.parse(req.body);
+      
+      // Perform full installation
+      const result = await installManager.performFullInstallation(setupData);
+      
+      if (result.success) {
+        // Reinitialize main database connection with new URL
+        initializeDatabase(setupData.databaseUrl);
+        
+        // Clear setup status cache to force refresh
+        clearSetupStatusCache();
+        
+        res.json({ 
+          success: true, 
+          message: "Installation completed successfully",
+          adminUserId: result.adminUserId,
+          siteName: setupData.siteName
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error || "Installation failed"
+        });
+      }
+    } catch (error) {
+      console.error("Installation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ 
+          success: false, 
+          error: error.message
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "Unknown installation error"
+        });
+      }
+    }
+  });
+
+  app.post('/api/setup/validate-db', async (req, res) => {
+    try {
+      const { databaseUrl } = req.body;
+      
+      if (!databaseUrl) {
+        return res.status(400).json({ valid: false, error: "Database URL is required" });
+      }
+      
+      const isValid = await installManager.validateDatabaseConnection(databaseUrl);
+      res.json({ valid: isValid });
+    } catch (error) {
+      console.error("Database validation error:", error);
+      res.json({ valid: false, error: "Database validation failed" });
+    }
+  });
+
   // Auth middleware - setupAuth includes all auth routes
   setupAuth(app);
 

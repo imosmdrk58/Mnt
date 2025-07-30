@@ -27,6 +27,17 @@ export const sessions = pgTable(
   (table) => [index("idx_session_expire").on(table.expire)],
 );
 
+// Configuration table for installer setup
+export const config = pgTable("config", {
+  id: varchar("id").primaryKey().default("main_config"),
+  setupComplete: boolean("setup_complete").default(false),
+  siteName: varchar("site_name").default("MangaVerse"),
+  adminUserId: varchar("admin_user_id"),
+  installerDisabled: boolean("installer_disabled").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -429,6 +440,21 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   createdAt: true,
 });
 
+export const insertConfigSchema = createInsertSchema(config).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Installer schemas
+export const installerSetupSchema = z.object({
+  databaseUrl: z.string().min(1, "Database URL is required"),
+  siteName: z.string().min(1, "Site name is required"),
+  adminUsername: z.string().min(3, "Username must be at least 3 characters"),
+  adminEmail: z.string().email("Valid email is required"),
+  adminPassword: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -454,3 +480,6 @@ export type ReadingHistory = typeof readingHistory.$inferSelect;
 export type InsertReadingHistory = z.infer<typeof insertReadingHistorySchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Config = typeof config.$inferSelect;
+export type InsertConfig = z.infer<typeof insertConfigSchema>;
+export type InstallerSetup = z.infer<typeof installerSetupSchema>;
