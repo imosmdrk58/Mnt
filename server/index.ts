@@ -38,10 +38,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  // Import setup middleware
+  const { setupMiddleware } = await import("./middleware/setupMiddleware");
   
-  // Add setup middleware after routes are registered (so setup routes are not blocked)
+  // Add setup middleware BEFORE registering other routes
+  // This ensures ALL routes (except static assets) are blocked during setup
   app.use(setupMiddleware);
+  
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
