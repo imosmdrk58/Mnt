@@ -1,0 +1,119 @@
+ INSTALLER SETUP PROMPT (for MangaVerse or similar fullstack site)
+🎯 Goal:
+Make the platform installable via a web-based first-time setup wizard:
+
+Configure database
+
+Create initial admin user
+
+Set environment variables (securely)
+
+Initialize base collections/tables
+
+Lock/remove installer after setup completes
+
+⚙️ 1. SETUP WIZARD FLOW (UI-Driven)
+On first run (/setup route), display a multi-step wizard:
+
+Step 1: Database Setup
+Let user choose:
+
+PostgreSQL (Neon/Supabase/PlanetScale)
+
+MongoDB
+
+Input:
+
+DB URL
+
+Auth secrets (JWT, email tokens)
+
+Site name
+
+Step 2: Admin Account
+Input:
+
+Username
+
+Email
+
+Password
+
+Step 3: Confirmation
+Show parsed values
+
+Confirm install
+
+Button: “Install Now”
+
+Step 4: Installer Finalization
+Writes .env file or injects into process.env (if deploy-first)
+
+Runs DB seeding:
+
+Users, Roles, Default Genres, Settings
+
+Marks setupComplete: true in a config table
+
+Hides /setup route and redirects future attempts
+
+🧩 2. TECHNICAL IMPLEMENTATION (Next.js + Vercel Compatible)
+/pages/setup.tsx: Setup UI logic
+
+lib/installManager.ts:
+
+Validates DB URL
+
+Creates tables via Prisma or Mongoose
+
+Hashes admin password (e.g. with bcrypt)
+
+Inserts initial config + data
+
+middleware.ts:
+
+Redirect all routes to /setup if setup not complete
+
+lib/envCheck.ts: Fallback in dev to ensure ENV exists
+
+📁 3. CONFIG STORAGE OPTIONS
+Save setupComplete: true in:
+
+a config table in the DB (fallback if .env is immutable on Vercel)
+
+Set ENV vars via:
+
+local .env (in development)
+
+manual inject in deploy UI for Vercel
+
+optional self-hosted config API
+
+🚫 4. INSTALLER LOCKDOWN (Post-Install)
+Middleware should block access to /setup if:
+
+ts
+Copy
+Edit
+const config = await db.config.findFirst();
+if (config?.setupComplete) redirect('/');
+Delete installer DB entries if needed
+
+Recommend setting INSTALLER_DISABLED=true in .env
+
+✅ BONUS FEATURES
+Feature	Description
+env.json fallback	JSON-based fallback if ENV isn't writable
+Auto DB migrate	Call npx prisma migrate deploy (or init script)
+Hash passwords	bcrypt in install manager
+Use secure headers	Auto generate JWT_SECRET and salts
+
+📦 Deployment Compatibility
+✅ Vercel
+✅ Railway
+✅ Render
+✅ Self-hosted Docker
+✅ Cloudflare Pages (with workers)
+
+📜 PROMPT EXAMPLE TO EXECUTE THIS:
+Create a web-based installer at /setup that guides users through database setup, admin creation, and environment configuration. After completion, mark setup as complete in the DB and redirect future access to /. Make it deployable on Vercel, using an external DB like Supabase or MongoDB. Prevent access to /setup once installation is complete.
