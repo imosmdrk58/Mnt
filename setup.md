@@ -280,14 +280,14 @@ If the main pages work but `/setup` is not accessible on your Vercel deployment:
 - Clear browser cache and try again
 - The setup detection runs on every page load and will redirect if setup is incomplete
 
-**Setup API Returns 404 on Vercel:**
-If you see "404" errors for `/api/setup/status` on your deployed site:
-- **CRITICAL FIX**: The latest code now includes Vercel-specific API files in `/api/setup/` directory
-- Push the latest code changes that include the new `/api/setup/*.js` files
-- Redeploy your project on Vercel after pushing
-- Ensure your environment variables are set in Vercel (even if empty values)
-- The new structure uses individual serverless functions for each API endpoint
-- Check Vercel function logs in the dashboard if issues persist
+**Setup API Returns 404/500 on Vercel:**
+If you see "404" or "500" errors for `/api/setup/status` on your deployed site:
+- **CRITICAL FIX**: The latest code includes self-contained Vercel serverless functions
+- Push the updated code that includes the rewritten `/api/setup/*.js` files
+- These files now use CommonJS and direct database connections (no imports needed)
+- Redeploy your project on Vercel after pushing the latest changes
+- Ensure your DATABASE_URL environment variable is set in Vercel
+- The functions now work independently without requiring complex imports
 
 **Favicon 404 Errors:**
 If you see favicon.ico 404 errors:
