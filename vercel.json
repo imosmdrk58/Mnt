@@ -39,6 +39,10 @@
       "dest": "/api/setup/test-current-db.js"
     },
     {
+      "src": "/api/setup/test-install",
+      "dest": "/api/setup/test-install.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/dist/public/$1"
     }

@@ -1,12 +1,39 @@
 export default async function handler(req, res) {
+  // Set proper headers for JSON response
+  res.setHeader('Content-Type', 'application/json');
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
-    const { databaseUrl, adminUsername, adminPassword } = req.body;
+    console.log('API called with method:', req.method);
+    console.log('Request headers:', req.headers);
+    console.log('Raw body type:', typeof req.body);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    
+    // Handle different body parsing scenarios
+    let requestData = req.body;
+    if (typeof req.body === 'string') {
+      try {
+        requestData = JSON.parse(req.body);
+      } catch (parseError) {
+        console.error('Failed to parse JSON body:', parseError);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid JSON in request body'
+        });
+      }
+    }
+    
+    const { databaseUrl, adminUsername, adminPassword } = requestData || {};
 
     if (!databaseUrl || !adminUsername || !adminPassword) {
+      console.log('Missing fields:', { 
+        hasDatabaseUrl: !!databaseUrl, 
+        hasUsername: !!adminUsername, 
+        hasPassword: !!adminPassword 
+      });
       return res.status(400).json({ 
         message: 'Missing required fields: databaseUrl, adminUsername, adminPassword' 
       });
@@ -16,7 +43,19 @@ export default async function handler(req, res) {
     
     // Dynamic imports to avoid module issues
     const { neon } = await import('@neondatabase/serverless');
-    const bcrypt = await import('bcrypt');
+    
+    // Try to import bcrypt, fallback to bcryptjs if needed
+    let bcrypt;
+    try {
+      bcrypt = await import('bcrypt');
+    } catch (bcryptError) {
+      console.log('bcrypt failed, trying bcryptjs fallback');
+      try {
+        bcrypt = await import('bcryptjs');
+      } catch (fallbackError) {
+        throw new Error('Neither bcrypt nor bcryptjs available for password hashing');
+      }
+    }
     
     console.log('Testing database connection (Neon):', databaseUrl.replace(/\/\/.*@/, '//**:***@'));
     const sql = neon(databaseUrl);
@@ -348,9 +387,18 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Installation error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+    
     return res.status(500).json({ 
       success: false, 
-      message: `Installation failed: ${error.message}` 
+      message: `Installation failed: ${error.message}`,
+      error: error.name,
+      details: error.stack
     });
   }
 }
