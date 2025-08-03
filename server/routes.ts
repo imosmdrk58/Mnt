@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ 
           success: true, 
           message: 'Installation completed successfully!',
-          details: result.details 
+          adminUserId: result.adminUserId 
         });
       } else {
         res.status(400).json({ 
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Installation error:', error);
       res.status(500).json({ 
         success: false, 
-        message: `Installation failed: ${error.message}` 
+        message: `Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
       });
     }
   });
