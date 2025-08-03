@@ -12,28 +12,61 @@ export default async function handler(req, res) {
       });
     }
 
-    // Set the DATABASE_URL environment variable for Drizzle
-    process.env.DATABASE_URL = databaseUrl;
-
+    console.log('Starting installation process...');
+    
     // Dynamic imports to avoid module issues
     const { neon } = await import('@neondatabase/serverless');
     const bcrypt = await import('bcrypt');
-    const { execSync } = await import('child_process');
     
-    console.log('Starting database installation...');
+    console.log('Testing database connection (Neon):', databaseUrl.replace(/\/\/.*@/, '//**:***@'));
+    const sql = neon(databaseUrl);
     
-    // Use Drizzle to push all schema tables to the database
+    // Test connection
     try {
-      console.log('Pushing database schema...');
-      execSync('npm run db:push', { 
-        stdio: 'inherit',
-        env: { ...process.env, DATABASE_URL: databaseUrl }
+      await sql`SELECT 1`;
+      console.log('Database connection validated successfully');
+    } catch (connError) {
+      console.error('Database connection failed:', connError);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Database connection failed. Please check your DATABASE_URL.' 
       });
-      console.log('Database schema pushed successfully');
-    } catch (pushError) {
-      console.error('Drizzle push failed:', pushError);
-      // Fallback to manual table creation for critical tables
-      const sql = neon(databaseUrl);
+    }
+
+    console.log('Creating database schema...');
+    
+    // Create all tables manually since Drizzle CLI isn't available in Vercel serverless
+    // Create enums first
+    await sql`CREATE TYPE IF NOT EXISTS series_type AS ENUM ('webtoon', 'manga', 'novel')`;
+    await sql`CREATE TYPE IF NOT EXISTS series_status AS ENUM ('ongoing', 'completed', 'hiatus')`;
+    await sql`CREATE TYPE IF NOT EXISTS chapter_status AS ENUM ('free', 'premium', 'scheduled')`;
+
+    // Sessions table (required for auth)
+    await sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid TEXT PRIMARY KEY,
+        sess JSONB NOT NULL,
+        expire TIMESTAMP NOT NULL
+      )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`;
+
+    // Config table
+    await sql`
+      CREATE TABLE IF NOT EXISTS config (
+        id TEXT PRIMARY KEY,
+        setup_complete BOOLEAN DEFAULT false,
+        site_name TEXT DEFAULT 'MangaVerse',
+        admin_user_id TEXT,
+        installer_disabled BOOLEAN DEFAULT false,
+        stripe_public_key TEXT,
+        stripe_secret_key TEXT,
+        logo_url TEXT,
+        favicon_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
       
       await sql`
         CREATE TABLE IF NOT EXISTS users (
