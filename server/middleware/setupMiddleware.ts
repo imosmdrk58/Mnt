@@ -67,6 +67,11 @@ export async function setupMiddleware(req: Request, res: Response, next: NextFun
     return next();
   }
 
+  // Skip for login/register API routes to allow authentication even during setup
+  if (path.startsWith('/api/auth/') || path === '/api/user') {
+    return next();
+  }
+
   // Also skip for any other API routes during development to prevent blocking
   if (process.env.NODE_ENV === 'development' && path.startsWith('/api/')) {
     console.log(`Setup middleware: Allowing API route during development: ${path}`);

@@ -57,6 +57,10 @@ export function setupAuth(app: Express) {
         }
         return done(null, user);
       } catch (error) {
+        // During installer mode, database might not be available
+        if (error instanceof Error && error.message.includes('Database not initialized')) {
+          return done(null, false, { message: 'Setup required - please complete installation' });
+        }
         return done(error);
       }
     }),
@@ -68,7 +72,12 @@ export function setupAuth(app: Express) {
       const user = await storage.getUser(id);
       done(null, user);
     } catch (error) {
-      done(error);
+      // During installer mode, database might not be available
+      if (error instanceof Error && error.message.includes('Database not initialized')) {
+        done(null, null); // No user session during installer mode
+      } else {
+        done(error);
+      }
     }
   });
 
@@ -120,7 +129,11 @@ export function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
+      if (error instanceof Error && error.message.includes('Database not initialized')) {
+        res.status(503).json({ message: "Setup required - please complete installation first" });
+      } else {
+        res.status(500).json({ message: "Registration failed" });
+      }
     }
   });
 
