@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, requireAuth, optionalAuth } from "./auth";
 import { insertSeriesSchema, insertChapterSchema, insertCommentSchema, insertReviewSchema, installerSetupSchema, type Series } from "@shared/schema";
 import { installManager } from "./installManager";
-import { checkSetupStatus, clearSetupStatusCache } from "./middleware/setupMiddleware";
+import { checkSetupStatus, clearSetupStatusCache, setupMiddleware } from "./middleware/setupMiddleware";
 import { initializeDatabase } from "./db";
 import multer from 'multer';
 import path from 'path';
@@ -148,6 +148,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Current database test error:", error);
       res.json({ valid: false, error: `Database test failed: ${(error as Error).message}` });
     }
+  });
+
+  // Apply setup middleware to protect all non-setup routes
+  app.use((req, res, next) => {
+    const path = req.path;
+    // Skip setup middleware for setup-related routes and static assets
+    if (path.startsWith('/api/setup') || 
+        path.startsWith('/uploads') || 
+        path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.ico') ||
+        path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg') ||
+        path.endsWith('.webp') || path.endsWith('.svg') || path.endsWith('.woff') ||
+        path.endsWith('.woff2') || path.endsWith('.map')) {
+      return next();
+    }
+    
+    // Apply setup middleware to all other routes
+    setupMiddleware(req, res, next);
   });
 
   // Auth middleware - setupAuth includes all auth routes

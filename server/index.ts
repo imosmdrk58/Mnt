@@ -38,13 +38,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Import setup middleware
-  const { setupMiddleware } = await import("./middleware/setupMiddleware");
-  
-  // Add setup middleware BEFORE registering other routes
-  // This ensures ALL routes (except static assets) are blocked during setup
-  app.use(setupMiddleware);
-  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

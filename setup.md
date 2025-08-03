@@ -280,6 +280,13 @@ If the main pages work but `/setup` is not accessible on your Vercel deployment:
 - Clear browser cache and try again
 - The setup detection runs on every page load and will redirect if setup is incomplete
 
+**Setup API Returns 404 on Vercel:**
+If you see "404" errors for `/api/setup/status` on your deployed site:
+- Ensure your environment variables are set in Vercel (even if empty values)
+- The latest code fixes the API routing issues for serverless functions
+- Redeploy your project after pushing the latest code changes
+- Check Vercel function logs if the API still doesn't work
+
 **Runtime Version Error:**
 If you see "Function Runtimes must have a valid version", your `vercel.json` file needs to be updated:
 - Delete the old `vercel.json` file
