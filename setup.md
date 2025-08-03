@@ -133,7 +133,7 @@ VITE_STRIPE_PUBLIC_KEY=your_stripe_public_key (if configured)
    - **Framework Preset:** Select "Other" or "Vite"
    - **Root Directory:** `.` (leave as default)
    - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
+   - **Output Directory:** `dist/public` ⚠️ **Important: Must be `dist/public`, not just `dist`**
    - **Install Command:** `npm install`
 
 5. **Click "Deploy"** - This first deployment will likely fail due to missing environment variables
@@ -192,28 +192,25 @@ The `vercel.json` file has been automatically created in your project root with 
   "version": 2,
   "builds": [
     {
-      "src": "server/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/**"]
-      }
-    },
-    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "dist/public"
       }
+    },
+    {
+      "src": "dist/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.ts"
+      "dest": "/dist/index.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/$1"
+      "dest": "/dist/public/$1"
     }
   ],
   "env": {
@@ -223,11 +220,11 @@ The `vercel.json` file has been automatically created in your project root with 
 ```
 
 This configuration:
-- Uses the correct `@vercel/node` builder for serverless functions
-- Builds both the server and static files properly
-- Routes API calls (`/api/*`) to your Express server
-- Serves static files from the `dist` directory
-- Includes the frontend build files in the server function
+- Builds static files from `dist/public` (where Vite outputs frontend files)
+- Uses the built server file `dist/index.js` as the serverless function
+- Routes API calls (`/api/*`) to the server function
+- Serves static files from the correct directory structure
+- Matches the project's build output exactly
 
 #### Step 5: Redeploy with Environment Variables
 
@@ -266,6 +263,14 @@ This configuration:
 4. **SSL certificates are automatically provisioned**
 
 #### Troubleshooting Vercel Deployment
+
+**Showing Raw Code Instead of Website:**
+If your Vercel deployment shows a page with raw code instead of the website:
+- Ensure you ran `npm run build` locally first to test the build
+- Check that `vercel.json` matches the corrected configuration above
+- Make sure the Build Command is set to `npm run build` in Vercel dashboard
+- Verify Output Directory is set to `dist/public` in project settings
+- Redeploy after making these changes
 
 **Runtime Version Error:**
 If you see "Function Runtimes must have a valid version", your `vercel.json` file needs to be updated:
