@@ -75,28 +75,8 @@ export default async function handler(req, res) {
     console.log('Creating database schema...');
     
     // Create all tables manually since Drizzle CLI isn't available in Vercel serverless
-    // Create enums first - handle potential conflicts
-    await sql`
-      DO $$ BEGIN
-        CREATE TYPE series_type AS ENUM ('webtoon', 'manga', 'novel');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;
-    `;
-    await sql`
-      DO $$ BEGIN
-        CREATE TYPE series_status AS ENUM ('ongoing', 'completed', 'hiatus');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;
-    `;
-    await sql`
-      DO $$ BEGIN
-        CREATE TYPE chapter_status AS ENUM ('free', 'premium', 'scheduled');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;
-    `;
+    // Skip enums for now to avoid serverless issues - use TEXT with constraints instead
+    console.log('Creating core tables...');
 
     // Sessions table (required for auth)
     await sql`
@@ -111,7 +91,7 @@ export default async function handler(req, res) {
     // Config table
     await sql`
       CREATE TABLE IF NOT EXISTS config (
-        id TEXT PRIMARY KEY DEFAULT 'main_config',
+        id TEXT PRIMARY KEY,
         setup_complete BOOLEAN DEFAULT false,
         site_name TEXT DEFAULT 'MangaVerse',
         admin_user_id TEXT,
@@ -128,7 +108,7 @@ export default async function handler(req, res) {
     // Users table
     await sql`
       CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -164,7 +144,7 @@ export default async function handler(req, res) {
     // Groups table
     await sql`
       CREATE TABLE IF NOT EXISTS groups (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT,
         banner_url TEXT,
@@ -181,16 +161,16 @@ export default async function handler(req, res) {
     // Series table
     await sql`
       CREATE TABLE IF NOT EXISTS series (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         description TEXT,
         cover_image_url TEXT,
-        type series_type NOT NULL,
-        status series_status DEFAULT 'ongoing',
+        type TEXT NOT NULL CHECK (type IN ('webtoon', 'manga', 'novel')),
+        status TEXT DEFAULT 'ongoing' CHECK (status IN ('ongoing', 'completed', 'hiatus')),
         author_id TEXT NOT NULL,
         group_id TEXT,
-        genres TEXT[],
-        tags TEXT[],
+        genres TEXT,
+        tags TEXT,
         is_nsfw BOOLEAN DEFAULT false,
         view_count INTEGER DEFAULT 0,
         like_count INTEGER DEFAULT 0,
@@ -206,14 +186,14 @@ export default async function handler(req, res) {
     // Chapters table
     await sql`
       CREATE TABLE IF NOT EXISTS chapters (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         series_id TEXT NOT NULL,
         title TEXT NOT NULL,
         chapter_number INTEGER NOT NULL,
         content JSONB,
-        images TEXT[],
+        images TEXT,
         preview_image TEXT,
-        status chapter_status DEFAULT 'free',
+        status TEXT DEFAULT 'free' CHECK (status IN ('free', 'premium', 'scheduled')),
         coin_price INTEGER DEFAULT 0,
         view_count INTEGER DEFAULT 0,
         like_count INTEGER DEFAULT 0,
@@ -226,7 +206,7 @@ export default async function handler(req, res) {
     // Chapter unlocks table
     await sql`
       CREATE TABLE IF NOT EXISTS chapter_unlocks (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         chapter_id TEXT NOT NULL,
         unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -236,7 +216,7 @@ export default async function handler(req, res) {
     // Group members table
     await sql`
       CREATE TABLE IF NOT EXISTS group_members (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         group_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'contributor',
@@ -247,7 +227,7 @@ export default async function handler(req, res) {
     // Comments table
     await sql`
       CREATE TABLE IF NOT EXISTS comments (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         chapter_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         content TEXT NOT NULL,
@@ -261,7 +241,7 @@ export default async function handler(req, res) {
     // Reviews table
     await sql`
       CREATE TABLE IF NOT EXISTS reviews (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         series_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         rating INTEGER NOT NULL,
@@ -275,7 +255,7 @@ export default async function handler(req, res) {
     // Follows table
     await sql`
       CREATE TABLE IF NOT EXISTS follows (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         target_id TEXT NOT NULL,
         target_type TEXT NOT NULL,
@@ -286,7 +266,7 @@ export default async function handler(req, res) {
     // Bookmarks table
     await sql`
       CREATE TABLE IF NOT EXISTS bookmarks (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         series_id TEXT NOT NULL,
         folder_id TEXT,
@@ -297,7 +277,7 @@ export default async function handler(req, res) {
     // Bookmark folders table
     await sql`
       CREATE TABLE IF NOT EXISTS bookmark_folders (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         name TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -307,7 +287,7 @@ export default async function handler(req, res) {
     // Reading progress table
     await sql`
       CREATE TABLE IF NOT EXISTS reading_progress (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         series_id TEXT NOT NULL,
         chapter_id TEXT NOT NULL,
@@ -320,7 +300,7 @@ export default async function handler(req, res) {
     // Reading history table
     await sql`
       CREATE TABLE IF NOT EXISTS reading_history (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         chapter_id TEXT NOT NULL,
         series_id TEXT NOT NULL,
@@ -331,7 +311,7 @@ export default async function handler(req, res) {
     // Chapter likes table
     await sql`
       CREATE TABLE IF NOT EXISTS chapter_likes (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         chapter_id TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -341,7 +321,7 @@ export default async function handler(req, res) {
     // Chapter views table
     await sql`
       CREATE TABLE IF NOT EXISTS chapter_views (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT,
         chapter_id TEXT NOT NULL,
         viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -351,7 +331,7 @@ export default async function handler(req, res) {
     // Transactions table
     await sql`
       CREATE TABLE IF NOT EXISTS transactions (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         type TEXT NOT NULL,
         amount INTEGER NOT NULL,
@@ -363,21 +343,20 @@ export default async function handler(req, res) {
 
     console.log('Basic tables created successfully');
 
-    // Create admin user
+    // Create admin user with simple ID generation
+    const adminUserId = Math.random().toString(36).substring(2) + Date.now().toString(36);
     const hashedPassword = await bcrypt.hash(adminPassword, 12);
     
     console.log('Creating admin user...');
-    const adminUserResult = await sql`
-      INSERT INTO users (username, email, password, is_creator)
-      VALUES (${adminUsername}, ${adminUsername + '@admin.local'}, ${hashedPassword}, true)
+    await sql`
+      INSERT INTO users (id, username, email, password, is_creator)
+      VALUES (${adminUserId}, ${adminUsername}, ${adminUsername + '@admin.local'}, ${hashedPassword}, true)
       ON CONFLICT (username) DO UPDATE SET
         password = ${hashedPassword},
         is_creator = true,
         updated_at = CURRENT_TIMESTAMP
-      RETURNING id
     `;
 
-    const adminUserId = adminUserResult[0]?.id;
     console.log('Admin user created successfully:', adminUsername, `(${adminUserId})`);
 
     // Mark setup as complete
