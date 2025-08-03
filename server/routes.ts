@@ -97,16 +97,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log("Validating database URL:", databaseUrl.substring(0, 20) + "...");
-      const isValid = await installManager.validateDatabaseConnection(databaseUrl);
+      const result = await installManager.validateDatabaseConnection(databaseUrl);
       
-      if (isValid) {
+      if (result.valid) {
         res.json({ valid: true, message: "Database connection successful" });
       } else {
-        res.json({ valid: false, error: "Unable to connect to database. Please check your connection string and ensure the database is accessible." });
+        res.json({ valid: false, error: result.error || "Unable to connect to database." });
       }
     } catch (error) {
       console.error("Database validation error:", error);
-      res.json({ valid: false, error: `Database validation failed: ${(error as Error).message}` });
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = "Database validation failed";
+      if (error instanceof Error) {
+        if (error.message.includes('ENOTFOUND')) {
+          errorMessage = "Database hostname not found. Please verify the hostname in your connection string.";
+        } else if (error.message.includes('ECONNREFUSED')) {
+          errorMessage = "Connection refused. The database server may be down or the port may be incorrect.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "Connection timeout. Please check your network connectivity and database availability.";
+        } else if (error.message.includes('authentication') || error.message.includes('password')) {
+          errorMessage = "Authentication failed. Please check your username and password.";
+        } else if (error.message.includes('ECONNRESET')) {
+          errorMessage = "Connection reset. The database may be overloaded or have connection limits.";
+        } else {
+          errorMessage = `Database validation failed: ${error.message}`;
+        }
+      }
+      
+      res.json({ valid: false, error: errorMessage });
     }
   });
 
@@ -119,10 +138,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log("Testing current database connection...");
-      const isValid = await installManager.validateDatabaseConnection(currentDbUrl);
+      const result = await installManager.validateDatabaseConnection(currentDbUrl);
       res.json({ 
-        valid: isValid, 
-        message: isValid ? "Current database connection works" : "Current database connection failed",
+        valid: result.valid, 
+        message: result.valid ? "Current database connection works" : result.error || "Current database connection failed",
         hasDbUrl: !!currentDbUrl
       });
     } catch (error) {

@@ -1,5 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless';
+import { Pool as PgPool } from 'pg';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
@@ -11,65 +13,103 @@ const scryptAsync = promisify(scrypt);
 neonConfig.webSocketConstructor = ws;
 
 export class InstallManager {
-  private pool: Pool | null = null;
+  private pool: NeonPool | PgPool | null = null;
   private db: any = null;
+  private isNeonDatabase = false;
 
-  async validateDatabaseConnection(databaseUrl: string): Promise<boolean> {
+  private isNeonUrl(databaseUrl: string): boolean {
+    return databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.dev');
+  }
+
+  async validateDatabaseConnection(databaseUrl: string): Promise<{ valid: boolean; error?: string }> {
     if (!databaseUrl || databaseUrl.trim() === '') {
-      return false;
+      return { valid: false, error: "Database URL is required" };
     }
 
     try {
       // Validate URL format first
       const url = new URL(databaseUrl);
       if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
-        console.error("Invalid database protocol. Must be postgres:// or postgresql://");
-        return false;
+        return { valid: false, error: "Invalid database protocol. Must be postgres:// or postgresql://" };
       }
 
-      const testPool = new Pool({ 
-        connectionString: databaseUrl,
-        connectionTimeoutMillis: 10000, // 10 second timeout
-        idleTimeoutMillis: 5000, // 5 second idle timeout
-      });
+      const isNeon = this.isNeonUrl(databaseUrl);
       
-      const testDb = drizzle({ client: testPool, schema });
-      
-      // Test connection with a simple query with timeout
-      const queryPromise = testDb.execute(sql`SELECT 1 as test`);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 15000)
-      );
-      
-      await Promise.race([queryPromise, timeoutPromise]);
-      await testPool.end();
+      if (isNeon) {
+        // Use Neon serverless for Neon databases
+        const testPool = new NeonPool({ 
+          connectionString: databaseUrl,
+          connectionTimeoutMillis: 10000,
+          idleTimeoutMillis: 5000,
+        });
+        
+        const testDb = drizzleNeon({ client: testPool, schema });
+        
+        const queryPromise = testDb.execute(sql`SELECT 1 as test`);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 15000)
+        );
+        
+        await Promise.race([queryPromise, timeoutPromise]);
+        await testPool.end();
+      } else {
+        // Use regular pg Pool for other PostgreSQL providers (Supabase, etc.)
+        const testPool = new PgPool({ 
+          connectionString: databaseUrl,
+          connectionTimeoutMillis: 10000,
+          idleTimeoutMillis: 5000,
+          max: 1, // Limit connections for testing
+        });
+        
+        const testDb = drizzlePg(testPool, { schema });
+        
+        const queryPromise = testDb.execute(sql`SELECT 1 as test`);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 15000)
+        );
+        
+        await Promise.race([queryPromise, timeoutPromise]);
+        await testPool.end();
+      }
       
       console.log("Database connection validated successfully");
-      return true;
+      return { valid: true };
     } catch (error) {
       console.error("Database validation failed:", error);
       
       // Provide more specific error messages
       if (error instanceof Error) {
         if (error.message.includes('ENOTFOUND')) {
-          console.error("DNS resolution failed - check hostname");
+          return { valid: false, error: "Database hostname not found. Please verify the hostname in your connection string." };
         } else if (error.message.includes('ECONNREFUSED')) {
-          console.error("Connection refused - check if database is running");
+          return { valid: false, error: "Connection refused. The database server may be down or the port may be incorrect." };
         } else if (error.message.includes('timeout')) {
-          console.error("Connection timeout - check network connectivity");
-        } else if (error.message.includes('authentication')) {
-          console.error("Authentication failed - check credentials");
+          return { valid: false, error: "Connection timeout. Please check your network connectivity and database availability." };
+        } else if (error.message.includes('authentication') || error.message.includes('password')) {
+          return { valid: false, error: "Authentication failed. Please check your username and password." };
+        } else if (error.message.includes('ECONNRESET')) {
+          return { valid: false, error: "Connection reset. The database may be overloaded or have connection limits." };
+        } else if (error.message.includes('Invalid URL')) {
+          return { valid: false, error: "Invalid database URL format. Please check your connection string." };
         }
       }
       
-      return false;
+      return { valid: false, error: `Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }
 
   async initializeDatabase(databaseUrl: string): Promise<boolean> {
     try {
-      this.pool = new Pool({ connectionString: databaseUrl });
-      this.db = drizzle({ client: this.pool, schema });
+      this.isNeonDatabase = this.isNeonUrl(databaseUrl);
+      
+      if (this.isNeonDatabase) {
+        this.pool = new NeonPool({ connectionString: databaseUrl });
+        this.db = drizzleNeon({ client: this.pool as NeonPool, schema });
+      } else {
+        this.pool = new PgPool({ connectionString: databaseUrl });
+        this.db = drizzlePg(this.pool as PgPool, { schema });
+      }
+      
       return true;
     } catch (error) {
       console.error("Failed to initialize database:", error);
@@ -232,9 +272,9 @@ export class InstallManager {
   async performFullInstallation(setupData: InstallerSetup): Promise<{ success: boolean; error?: string; adminUserId?: string }> {
     try {
       // Step 1: Validate database connection
-      const isValidDb = await this.validateDatabaseConnection(setupData.databaseUrl);
-      if (!isValidDb) {
-        return { success: false, error: "Invalid database URL or connection failed" };
+      const dbValidation = await this.validateDatabaseConnection(setupData.databaseUrl);
+      if (!dbValidation.valid) {
+        return { success: false, error: dbValidation.error || "Invalid database URL or connection failed" };
       }
 
       // Step 2: Initialize database connection

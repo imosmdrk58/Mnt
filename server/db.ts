@@ -1,13 +1,19 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless';
+import { Pool as PgPool } from 'pg';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
 // For installer mode, allow running without DATABASE_URL initially
-export let pool: Pool | null = null;
+export let pool: NeonPool | PgPool | null = null;
 export let db: any = null;
+
+function isNeonUrl(databaseUrl: string): boolean {
+  return databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.dev');
+}
 
 export function initializeDatabase(databaseUrl?: string) {
   const connectionUrl = databaseUrl || process.env.DATABASE_URL;
@@ -18,8 +24,20 @@ export function initializeDatabase(databaseUrl?: string) {
   }
 
   try {
-    pool = new Pool({ connectionString: connectionUrl });
-    db = drizzle({ client: pool, schema });
+    const isNeon = isNeonUrl(connectionUrl);
+    
+    if (isNeon) {
+      // Use Neon serverless for Neon databases
+      pool = new NeonPool({ connectionString: connectionUrl });
+      db = drizzleNeon({ client: pool as NeonPool, schema });
+      console.log("Database initialized with Neon serverless driver");
+    } else {
+      // Use regular pg Pool for other PostgreSQL providers (Supabase, etc.)
+      pool = new PgPool({ connectionString: connectionUrl });
+      db = drizzlePg(pool as PgPool, { schema });
+      console.log("Database initialized with standard PostgreSQL driver");
+    }
+    
     return true;
   } catch (error) {
     console.error("Failed to initialize database:", error);
