@@ -1,16 +1,4 @@
-const { neon } = require('@neondatabase/serverless');
-
-async function validateDatabaseConnection(databaseUrl) {
-  try {
-    const sql = neon(databaseUrl);
-    await sql`SELECT 1`;
-    return { valid: true };
-  } catch (error) {
-    return { valid: false, error: error.message };
-  }
-}
-
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -21,15 +9,18 @@ module.exports = async function handler(req, res) {
       return res.json({ valid: false, error: "No DATABASE_URL environment variable set" });
     }
     
-    console.log("Testing current database connection...");
-    const result = await validateDatabaseConnection(currentDbUrl);
-    res.json({ 
-      valid: result.valid, 
-      message: result.valid ? "Current database connection works" : result.error || "Current database connection failed",
-      hasDbUrl: !!currentDbUrl
+    // Dynamic import to avoid module issues
+    const { neon } = await import('@neondatabase/serverless');
+    const sql = neon(currentDbUrl);
+    await sql`SELECT 1`;
+    
+    return res.json({ 
+      valid: true, 
+      message: "Current database connection works",
+      hasDbUrl: true
     });
   } catch (error) {
     console.error("Current database test error:", error);
-    res.json({ valid: false, error: `Database test failed: ${error.message}` });
+    return res.json({ valid: false, error: `Database test failed: ${error.message}` });
   }
 };

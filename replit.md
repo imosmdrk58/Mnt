@@ -64,8 +64,8 @@ PostgreSQL is used with entities including:
 **CRITICAL Vercel Deployment Fixes (COMPLETE - August 3, 2025)**
 - ✓ Fixed Vercel Runtime Error: Updated vercel.json to use @vercel/node instead of deprecated nodejs18.x runtime
 - ✓ Fixed Raw Code Display: Corrected Vercel configuration to serve from dist/public for static files
-- ✓ Fixed Setup API 404/500 Error: Created self-contained Vercel serverless functions with CommonJS and direct DB connections
-- ✓ Added Individual API Endpoints: status.js, install.js, validate-db.js, test-current-db.js - no imports needed
+- ✓ Fixed Setup API 404/500 Error: Created Vercel serverless functions with ES modules and dynamic imports
+- ✓ Added Individual API Endpoints: status.js, install.js, validate-db.js, test-current-db.js using export default
 - ✓ Fixed Favicon 404: Added proper favicon.svg file and routing configuration
 - ✓ Updated Vercel Routes: Specific routing for setup API endpoints and static assets
 - ✓ Added Client-Side Setup Guard: Automatic redirect to /setup when setup is incomplete

@@ -1,8 +1,21 @@
-const { neon } = require('@neondatabase/serverless');
-const bcrypt = require('bcrypt');
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
 
-async function runInstallation({ databaseUrl, adminUsername, adminPassword }) {
   try {
+    const { databaseUrl, adminUsername, adminPassword } = req.body;
+
+    if (!databaseUrl || !adminUsername || !adminPassword) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: databaseUrl, adminUsername, adminPassword' 
+      });
+    }
+
+    // Dynamic imports to avoid module issues
+    const { neon } = await import('@neondatabase/serverless');
+    const bcrypt = await import('bcrypt');
+    
     const sql = neon(databaseUrl);
     
     // Create tables
@@ -54,57 +67,17 @@ async function runInstallation({ databaseUrl, adminUsername, adminPassword }) {
         updated_at = CURRENT_TIMESTAMP
     `;
 
-    return { 
+    return res.json({ 
       success: true, 
+      message: 'Installation completed successfully!',
       details: 'Database initialized and admin user created' 
-    };
-  } catch (error) {
-    console.error('Installation error:', error);
-    return { 
-      success: false, 
-      error: error.message 
-    };
-  }
-}
-
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  try {
-    const { databaseUrl, adminUsername, adminPassword } = req.body;
-
-    if (!databaseUrl || !adminUsername || !adminPassword) {
-      return res.status(400).json({ 
-        message: 'Missing required fields: databaseUrl, adminUsername, adminPassword' 
-      });
-    }
-
-    console.log('Starting installation process...');
-    const result = await runInstallation({
-      databaseUrl,
-      adminUsername,
-      adminPassword
     });
-
-    if (result.success) {
-      res.json({ 
-        success: true, 
-        message: 'Installation completed successfully!',
-        details: result.details 
-      });
-    } else {
-      res.status(400).json({ 
-        success: false, 
-        message: result.error || 'Installation failed' 
-      });
-    }
   } catch (error) {
     console.error('Installation error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       message: `Installation failed: ${error.message}` 
     });
   }
-};
+}
+
