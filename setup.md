@@ -272,6 +272,14 @@ If your Vercel deployment shows a page with raw code instead of the website:
 - Verify Output Directory is set to `dist/public` in project settings
 - Redeploy after making these changes
 
+**Setup Page Not Accessible on Vercel:**
+If the main pages work but `/setup` is not accessible on your Vercel deployment:
+- The app includes client-side setup detection that automatically redirects to `/setup` when needed
+- If you're not seeing the setup page, try accessing `/setup` directly in your browser
+- Check the browser console for any JavaScript errors that might prevent the redirect
+- Clear browser cache and try again
+- The setup detection runs on every page load and will redirect if setup is incomplete
+
 **Runtime Version Error:**
 If you see "Function Runtimes must have a valid version", your `vercel.json` file needs to be updated:
 - Delete the old `vercel.json` file
