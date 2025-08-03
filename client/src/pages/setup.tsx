@@ -637,6 +637,14 @@ export default function SetupPage() {
                               });
                               const text = await response.text();
                               addDebugInfo(`Simple install response: ${response.status} - ${text}`);
+                              
+                              // If simple install worked, offer to use it for actual installation
+                              if (response.ok) {
+                                const result = JSON.parse(text);
+                                if (result.success) {
+                                  addDebugInfo("✓ Simple install successful! This can be used for actual installation.");
+                                }
+                              }
                             } catch (e) {
                               addDebugInfo(`Simple install error: ${e}`);
                             }
@@ -667,6 +675,37 @@ export default function SetupPage() {
                           }}
                         >
                           Test Basic Install
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={async () => {
+                            addDebugInfo("Using simple install for actual setup...");
+                            try {
+                              const response = await fetch("/api/setup/simple-install", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  databaseUrl: form.getValues("databaseUrl"),
+                                  adminUsername: form.getValues("adminUsername"),
+                                  adminPassword: form.getValues("adminPassword")
+                                }),
+                              });
+                              const result = await response.json();
+                              addDebugInfo(`Simple setup result: ${JSON.stringify(result)}`);
+                              
+                              if (result.success) {
+                                addDebugInfo("✓ Simple setup complete! Redirecting...");
+                                setTimeout(() => {
+                                  window.location.href = "/";
+                                }, 2000);
+                              }
+                            } catch (e) {
+                              addDebugInfo(`Simple setup error: ${e}`);
+                            }
+                          }}
+                        >
+                          Use Simple Setup
                         </Button>
                       </div>
                       

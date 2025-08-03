@@ -26,37 +26,40 @@ export default async function handler(req, res) {
     await sql`SELECT 1`;
     console.log('Database connection successful');
     
-    // Create basic config table
+    // Create basic config table with simple primary key
     await sql`
       CREATE TABLE IF NOT EXISTS config (
-        id TEXT PRIMARY KEY DEFAULT 'main_config',
+        id TEXT PRIMARY KEY,
         setup_completed BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
     
-    // Create users table
+    // Create users table with simple UUID generation
     await sql`
       CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        id TEXT PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         email TEXT,
         is_creator BOOLEAN DEFAULT FALSE,
         coins INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
     
     console.log('Basic tables created');
+    
+    // Generate simple UUID for admin user
+    const adminUserId = Math.random().toString(36).substring(2) + Date.now().toString(36);
     
     // Hash password (simple approach without bcrypt for now)
     const simpleHash = Buffer.from(adminPassword + 'salt123').toString('base64');
     
     // Insert admin user
     await sql`
-      INSERT INTO users (username, password_hash, is_creator, coins)
-      VALUES (${adminUsername}, ${simpleHash}, TRUE, 1000)
+      INSERT INTO users (id, username, password_hash, is_creator, coins)
+      VALUES (${adminUserId}, ${adminUsername}, ${simpleHash}, TRUE, 1000)
       ON CONFLICT (username) DO UPDATE SET
         password_hash = EXCLUDED.password_hash,
         is_creator = TRUE,

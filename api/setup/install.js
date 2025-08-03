@@ -75,10 +75,28 @@ export default async function handler(req, res) {
     console.log('Creating database schema...');
     
     // Create all tables manually since Drizzle CLI isn't available in Vercel serverless
-    // Create enums first
-    await sql`CREATE TYPE IF NOT EXISTS series_type AS ENUM ('webtoon', 'manga', 'novel')`;
-    await sql`CREATE TYPE IF NOT EXISTS series_status AS ENUM ('ongoing', 'completed', 'hiatus')`;
-    await sql`CREATE TYPE IF NOT EXISTS chapter_status AS ENUM ('free', 'premium', 'scheduled')`;
+    // Create enums first - handle potential conflicts
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE series_type AS ENUM ('webtoon', 'manga', 'novel');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `;
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE series_status AS ENUM ('ongoing', 'completed', 'hiatus');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `;
+    await sql`
+      DO $$ BEGIN
+        CREATE TYPE chapter_status AS ENUM ('free', 'premium', 'scheduled');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `;
 
     // Sessions table (required for auth)
     await sql`
