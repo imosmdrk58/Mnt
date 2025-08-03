@@ -190,11 +190,22 @@ The `vercel.json` file has been automatically created in your project root with 
 ```json
 {
   "version": 2,
-  "functions": {
-    "server/index.ts": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["dist/**"]
+      }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -212,9 +223,11 @@ The `vercel.json` file has been automatically created in your project root with 
 ```
 
 This configuration:
+- Uses the correct `@vercel/node` builder for serverless functions
+- Builds both the server and static files properly
 - Routes API calls (`/api/*`) to your Express server
 - Serves static files from the `dist` directory
-- Uses Node.js 18.x runtime for serverless functions
+- Includes the frontend build files in the server function
 
 #### Step 5: Redeploy with Environment Variables
 
@@ -253,6 +266,12 @@ This configuration:
 4. **SSL certificates are automatically provisioned**
 
 #### Troubleshooting Vercel Deployment
+
+**Runtime Version Error:**
+If you see "Function Runtimes must have a valid version", your `vercel.json` file needs to be updated:
+- Delete the old `vercel.json` file
+- Use the corrected configuration provided above (uses `@vercel/node` instead of `nodejs18.x`)
+- Redeploy your project
 
 **Build Failures:**
 - Check build logs in Vercel dashboard
