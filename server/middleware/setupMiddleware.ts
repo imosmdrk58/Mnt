@@ -10,7 +10,7 @@ export interface SetupStatus {
 
 let cachedSetupStatus: SetupStatus | null = null;
 let lastStatusCheck = 0;
-const STATUS_CACHE_DURATION = 30000; // 30 seconds
+const STATUS_CACHE_DURATION = 5000; // 5 seconds for more responsive setup status checks
 
 export async function checkSetupStatus(): Promise<SetupStatus> {
   const now = Date.now();

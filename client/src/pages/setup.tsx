@@ -87,11 +87,21 @@ export default function SetupPage() {
     onSuccess: (result: any) => {
       if (result.success) {
         setInstallationComplete(true);
-        refetchStatus();
-        // Redirect to home after successful installation
+        
+        // Aggressively poll status until setup is complete
+        const pollInterval = setInterval(async () => {
+          const statusResult = await refetchStatus();
+          if (statusResult.data?.isSetup) {
+            clearInterval(pollInterval);
+            window.location.href = "/";
+          }
+        }, 1000); // Poll every second
+        
+        // Fallback redirect after 10 seconds
         setTimeout(() => {
+          clearInterval(pollInterval);
           window.location.href = "/";
-        }, 3000);
+        }, 10000);
       }
     },
   });
