@@ -34,6 +34,12 @@ export const config = pgTable("config", {
   siteName: varchar("site_name").default("MangaVerse"),
   adminUserId: varchar("admin_user_id"),
   installerDisabled: boolean("installer_disabled").default(false),
+  // Stripe configuration
+  stripePublicKey: varchar("stripe_public_key"),
+  stripeSecretKey: varchar("stripe_secret_key"),
+  // Site branding
+  logoUrl: varchar("logo_url"),
+  faviconUrl: varchar("favicon_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -453,6 +459,12 @@ export const installerSetupSchema = z.object({
   adminUsername: z.string().min(3, "Username must be at least 3 characters"),
   adminEmail: z.string().email("Valid email is required"),
   adminPassword: z.string().min(6, "Password must be at least 6 characters"),
+  // Stripe configuration (optional)
+  stripePublicKey: z.string().optional(),
+  stripeSecretKey: z.string().optional(),
+  // Site branding (optional)
+  logoUrl: z.string().optional(),
+  faviconUrl: z.string().optional(),
 });
 
 // Types

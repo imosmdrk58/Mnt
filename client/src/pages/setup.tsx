@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Database, User, Settings, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Database, User, Settings, AlertCircle, Loader2, CreditCard, Image } from "lucide-react";
 // Removed import of apiRequest since we're using fetch directly
 
 const setupSchema = z.object({
@@ -18,6 +18,12 @@ const setupSchema = z.object({
   adminUsername: z.string().min(3, "Username must be at least 3 characters"),
   adminEmail: z.string().email("Valid email is required"),
   adminPassword: z.string().min(6, "Password must be at least 6 characters"),
+  // Optional Stripe configuration
+  stripePublicKey: z.string().optional(),
+  stripeSecretKey: z.string().optional(),
+  // Optional branding
+  logoUrl: z.string().optional(),
+  faviconUrl: z.string().optional(),
 });
 
 type SetupFormData = z.infer<typeof setupSchema>;
@@ -45,6 +51,10 @@ export default function SetupPage() {
       adminUsername: "",
       adminEmail: "",
       adminPassword: "",
+      stripePublicKey: "",
+      stripeSecretKey: "",
+      logoUrl: "",
+      faviconUrl: "",
     },
   });
 
@@ -169,26 +179,40 @@ export default function SetupPage() {
 
         {/* Progress Indicator */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <div className={`flex items-center ${currentStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 <Database className="w-4 h-4" />
               </div>
-              <span className="ml-2 font-medium">Database</span>
+              <span className="ml-2 font-medium text-sm">Database</span>
             </div>
-            <div className="w-8 h-px bg-border" />
+            <div className="w-6 h-px bg-border" />
             <div className={`flex items-center ${currentStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 <User className="w-4 h-4" />
               </div>
-              <span className="ml-2 font-medium">Admin</span>
+              <span className="ml-2 font-medium text-sm">Admin</span>
             </div>
-            <div className="w-8 h-px bg-border" />
+            <div className="w-6 h-px bg-border" />
             <div className={`flex items-center ${currentStep >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <span className="ml-2 font-medium text-sm">Stripe</span>
+            </div>
+            <div className="w-6 h-px bg-border" />
+            <div className={`flex items-center ${currentStep >= 4 ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 4 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                <Image className="w-4 h-4" />
+              </div>
+              <span className="ml-2 font-medium text-sm">Branding</span>
+            </div>
+            <div className="w-6 h-px bg-border" />
+            <div className={`flex items-center ${currentStep >= 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep >= 5 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 <Settings className="w-4 h-4" />
               </div>
-              <span className="ml-2 font-medium">Install</span>
+              <span className="ml-2 font-medium text-sm">Install</span>
             </div>
           </div>
         </div>
@@ -198,12 +222,16 @@ export default function SetupPage() {
             <CardTitle>
               {currentStep === 1 && "Step 1: Database Configuration"}
               {currentStep === 2 && "Step 2: Admin Account Setup"}
-              {currentStep === 3 && "Step 3: Installation Confirmation"}
+              {currentStep === 3 && "Step 3: Payment Processing (Optional)"}
+              {currentStep === 4 && "Step 4: Site Branding (Optional)"}
+              {currentStep === 5 && "Step 5: Installation Confirmation"}
             </CardTitle>
             <CardDescription>
               {currentStep === 1 && "Configure your PostgreSQL database connection"}
               {currentStep === 2 && "Create your administrator account"}
-              {currentStep === 3 && "Review settings and complete installation"}
+              {currentStep === 3 && "Set up Stripe for premium content and payments"}
+              {currentStep === 4 && "Upload your logo and customize site appearance"}
+              {currentStep === 5 && "Review settings and complete installation"}
             </CardDescription>
           </CardHeader>
 
@@ -347,7 +375,7 @@ export default function SetupPage() {
                     Back
                   </Button>
                   <Button
-                    data-testid="button-continue-to-install"
+                    data-testid="button-continue-to-stripe"
                     onClick={() => setCurrentStep(3)}
                     className="flex-1"
                   >
@@ -359,6 +387,126 @@ export default function SetupPage() {
 
             {currentStep === 3 && (
               <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="font-medium">Stripe Payment Integration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enable premium content and monetization features
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="stripePublicKey">Stripe Publishable Key (Optional)</Label>
+                    <Input
+                      id="stripePublicKey"
+                      placeholder="pk_test_..."
+                      {...form.register("stripePublicKey")}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Starts with pk_test_ or pk_live_
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="stripeSecretKey">Stripe Secret Key (Optional)</Label>
+                    <Input
+                      id="stripeSecretKey"
+                      type="password"
+                      placeholder="sk_test_..."
+                      {...form.register("stripeSecretKey")}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Starts with sk_test_ or sk_live_
+                    </p>
+                  </div>
+                </div>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Optional:</strong> You can skip this step and configure Stripe later in the admin panel. 
+                    Get your API keys from{" "}
+                    <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="underline">
+                      Stripe Dashboard
+                    </a>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex space-x-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(4)}
+                    className="flex-1"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <Image className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="font-medium">Site Branding</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Customize your platform's appearance
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="logoUrl">Logo URL (Optional)</Label>
+                    <Input
+                      id="logoUrl"
+                      placeholder="https://example.com/logo.png"
+                      {...form.register("logoUrl")}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Direct link to your logo image (PNG, JPG, or SVG)
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="faviconUrl">Favicon URL (Optional)</Label>
+                    <Input
+                      id="faviconUrl"
+                      placeholder="https://example.com/favicon.ico"
+                      {...form.register("faviconUrl")}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Direct link to your favicon (ICO, PNG, or SVG)
+                    </p>
+                  </div>
+                </div>
+
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Optional:</strong> You can skip this step and upload your branding assets later 
+                    through the admin panel. Make sure your images are publicly accessible URLs.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex space-x-3">
+                  <Button variant="outline" onClick={() => setCurrentStep(3)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(5)}
+                    className="flex-1"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 5 && (
+              <div className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg space-y-2">
                   <h4 className="font-medium">Installation Summary</h4>
                   <div className="text-sm space-y-1">
@@ -366,6 +514,12 @@ export default function SetupPage() {
                     <p><strong>Database:</strong> Connected and validated</p>
                     <p><strong>Admin Username:</strong> {form.getValues("adminUsername")}</p>
                     <p><strong>Admin Email:</strong> {form.getValues("adminEmail")}</p>
+                    {form.getValues("stripePublicKey") && (
+                      <p><strong>Stripe:</strong> Configured for payments</p>
+                    )}
+                    {form.getValues("logoUrl") && (
+                      <p><strong>Logo:</strong> Custom branding configured</p>
+                    )}
                   </div>
                 </div>
 
@@ -389,7 +543,7 @@ export default function SetupPage() {
                 )}
 
                 <div className="flex space-x-3">
-                  <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+                  <Button variant="outline" onClick={() => setCurrentStep(4)} className="flex-1">
                     Back
                   </Button>
                   <Button

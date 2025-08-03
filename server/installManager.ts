@@ -154,7 +154,7 @@ export class InstallManager {
         CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)
       `);
 
-      // Config table
+      // Config table with Stripe and branding support
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS config (
           id varchar PRIMARY KEY DEFAULT 'main_config',
@@ -162,6 +162,10 @@ export class InstallManager {
           site_name varchar DEFAULT 'MangaVerse',
           admin_user_id varchar,
           installer_disabled boolean DEFAULT false,
+          stripe_public_key varchar,
+          stripe_secret_key varchar,
+          logo_url varchar,
+          favicon_url varchar,
           created_at timestamp DEFAULT now(),
           updated_at timestamp DEFAULT now()
         )
@@ -216,10 +220,10 @@ export class InstallManager {
     }
 
     try {
-      // Hash password with scrypt
+      // Hash password with scrypt (using same format as auth.ts)
       const salt = randomBytes(16).toString('hex');
       const derivedKey = await scryptAsync(password, salt, 64) as Buffer;
-      const hashedPassword = `${salt}:${derivedKey.toString('hex')}`;
+      const hashedPassword = `${derivedKey.toString('hex')}.${salt}`; // Fixed: hash.salt format
 
       // Create admin user
       const [user] = await this.db.insert(schema.users).values({
@@ -230,6 +234,7 @@ export class InstallManager {
         coinBalance: 10000, // Give admin some coins
       }).returning();
 
+      console.log(`Admin user created successfully: ${username} (${user.id})`);
       return user.id;
     } catch (error) {
       console.error("Failed to create admin user:", error);
@@ -237,7 +242,14 @@ export class InstallManager {
     }
   }
 
-  async completeSetup(siteName: string, adminUserId: string): Promise<boolean> {
+  async completeSetup(setupData: {
+    siteName: string;
+    adminUserId: string;
+    stripePublicKey?: string;
+    stripeSecretKey?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
+  }): Promise<boolean> {
     if (!this.db) {
       throw new Error("Database not initialized");
     }
@@ -247,19 +259,40 @@ export class InstallManager {
       await this.db.insert(schema.config).values({
         id: "main_config",
         setupComplete: true,
-        siteName,
-        adminUserId,
+        siteName: setupData.siteName,
+        adminUserId: setupData.adminUserId,
+        stripePublicKey: setupData.stripePublicKey,
+        stripeSecretKey: setupData.stripeSecretKey,
+        logoUrl: setupData.logoUrl,
+        faviconUrl: setupData.faviconUrl,
         installerDisabled: false,
       }).onConflictDoUpdate({
         target: schema.config.id,
         set: {
           setupComplete: true,
-          siteName,
-          adminUserId,
+          siteName: setupData.siteName,
+          adminUserId: setupData.adminUserId,
+          stripePublicKey: setupData.stripePublicKey,
+          stripeSecretKey: setupData.stripeSecretKey,
+          logoUrl: setupData.logoUrl,
+          faviconUrl: setupData.faviconUrl,
           updatedAt: sql`now()`,
         }
       });
+      
+      // Set environment variables for this session
+      if (setupData.stripePublicKey) {
+        process.env.VITE_STRIPE_PUBLIC_KEY = setupData.stripePublicKey;
+      }
+      if (setupData.stripeSecretKey) {
+        process.env.STRIPE_SECRET_KEY = setupData.stripeSecretKey;
+      }
 
+      console.log("Setup completed successfully with configuration:", {
+        siteName: setupData.siteName,
+        hasStripe: !!(setupData.stripePublicKey && setupData.stripeSecretKey),
+        hasLogo: !!setupData.logoUrl,
+      });
       return true;
     } catch (error) {
       console.error("Failed to complete setup:", error);
@@ -314,8 +347,15 @@ export class InstallManager {
         return { success: false, error: "Failed to create admin user" };
       }
 
-      // Step 5: Mark setup as complete
-      const setupCompleted = await this.completeSetup(setupData.siteName, adminUserId);
+      // Step 5: Mark setup as complete with all configuration
+      const setupCompleted = await this.completeSetup({
+        siteName: setupData.siteName,
+        adminUserId,
+        stripePublicKey: setupData.stripePublicKey,
+        stripeSecretKey: setupData.stripeSecretKey,
+        logoUrl: setupData.logoUrl,
+        faviconUrl: setupData.faviconUrl,
+      });
       if (!setupCompleted) {
         return { success: false, error: "Failed to complete setup configuration" };
       }
