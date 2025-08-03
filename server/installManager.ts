@@ -138,75 +138,23 @@ export class InstallManager {
     }
 
     try {
-      // Create tables by running migrations
-      // Note: In production, you'd use drizzle-kit for proper migrations
+      console.log("Creating database schema...");
+      
+      // Use a simplified approach - create only essential tables for installation
+      // and let the application create the rest via migrations
       
       // Sessions table
-      await this.db.execute(sql`
-        CREATE TABLE IF NOT EXISTS sessions (
-          sid varchar PRIMARY KEY,
-          sess jsonb NOT NULL,
-          expire timestamp NOT NULL
-        )
-      `);
+      await this.db.execute(sql`CREATE TABLE IF NOT EXISTS sessions (sid varchar PRIMARY KEY, sess jsonb NOT NULL, expire timestamp NOT NULL)`);
       
-      await this.db.execute(sql`
-        CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)
-      `);
+      await this.db.execute(sql`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`);
 
-      // Config table with Stripe and branding support
-      await this.db.execute(sql`
-        CREATE TABLE IF NOT EXISTS config (
-          id varchar PRIMARY KEY DEFAULT 'main_config',
-          setup_complete boolean DEFAULT false,
-          site_name varchar DEFAULT 'MangaVerse',
-          admin_user_id varchar,
-          installer_disabled boolean DEFAULT false,
-          stripe_public_key varchar,
-          stripe_secret_key varchar,
-          logo_url varchar,
-          favicon_url varchar,
-          created_at timestamp DEFAULT now(),
-          updated_at timestamp DEFAULT now()
-        )
-      `);
+      // Config table
+      await this.db.execute(sql`CREATE TABLE IF NOT EXISTS config (id varchar PRIMARY KEY DEFAULT 'main_config', setup_complete boolean DEFAULT false, site_name varchar DEFAULT 'MangaVerse', admin_user_id varchar, installer_disabled boolean DEFAULT false, stripe_public_key varchar, stripe_secret_key varchar, logo_url varchar, favicon_url varchar, created_at timestamp DEFAULT now(), updated_at timestamp DEFAULT now())`);
 
       // Users table
-      await this.db.execute(sql`
-        CREATE TABLE IF NOT EXISTS users (
-          id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
-          username varchar UNIQUE NOT NULL,
-          email varchar UNIQUE NOT NULL,
-          password varchar NOT NULL,
-          first_name varchar,
-          last_name varchar,
-          profile_image_url varchar,
-          coin_balance integer DEFAULT 0,
-          is_creator boolean DEFAULT false,
-          is_elite_reader boolean DEFAULT false,
-          followers_count integer DEFAULT 0,
-          email_verified boolean DEFAULT false,
-          reset_token varchar,
-          reset_token_expiry timestamp,
-          creator_display_name text,
-          creator_bio text,
-          creator_portfolio_url text,
-          creator_social_media_url text,
-          creator_content_types text,
-          creator_experience text,
-          creator_motivation text,
-          creator_application_status text,
-          creator_application_date text,
-          chapters_read integer DEFAULT 0,
-          reading_streak integer DEFAULT 0,
-          last_read_at timestamp,
-          reading_dates text,
-          settings text,
-          created_at timestamp DEFAULT now(),
-          updated_at timestamp DEFAULT now()
-        )
-      `);
+      await this.db.execute(sql`CREATE TABLE IF NOT EXISTS users (id varchar PRIMARY KEY DEFAULT gen_random_uuid(), username varchar UNIQUE NOT NULL, email varchar UNIQUE NOT NULL, password varchar NOT NULL, first_name varchar, last_name varchar, profile_image_url varchar, coin_balance integer DEFAULT 0, is_creator boolean DEFAULT false, is_elite_reader boolean DEFAULT false, followers_count integer DEFAULT 0, email_verified boolean DEFAULT false, reset_token varchar, reset_token_expiry timestamp, creator_display_name text, creator_bio text, creator_portfolio_url text, creator_social_media_url text, creator_content_types text, creator_experience text, creator_motivation text, creator_application_status text, creator_application_date text, chapters_read integer DEFAULT 0, reading_streak integer DEFAULT 0, last_read_at timestamp, reading_dates text, settings text, created_at timestamp DEFAULT now(), updated_at timestamp DEFAULT now())`);
 
+      console.log("Basic tables created successfully");
       return true;
     } catch (error) {
       console.error("Failed to create tables:", error);
