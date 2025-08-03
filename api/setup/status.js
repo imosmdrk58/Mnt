@@ -28,11 +28,19 @@ export default async function handler(req, res) {
 
     // Check if setup is complete
     const configResult = await sql`
-      SELECT setup_complete FROM config WHERE id = 'main_config' LIMIT 1
+      SELECT setup_complete, site_name, admin_user_id FROM config WHERE id = 'main_config' LIMIT 1
     `;
     
+    const config = configResult[0];
+    
     return res.json({
-      isSetup: configResult[0]?.setup_complete || false
+      isSetup: config?.setup_complete || false,
+      config: config ? {
+        id: 'main_config',
+        setupComplete: config.setup_complete,
+        siteName: config.site_name,
+        adminUserId: config.admin_user_id
+      } : null
     });
   } catch (error) {
     console.error('Setup status endpoint error:', error);

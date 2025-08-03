@@ -112,21 +112,34 @@ export default function SetupPage() {
       addDebugInfo(`Installation result: ${JSON.stringify(result)}`);
       if (result.success) {
         setInstallationComplete(true);
+        addDebugInfo("✓ Installation successful! Starting status polling...");
         
         // Aggressively poll status until setup is complete
+        let pollCount = 0;
         const pollInterval = setInterval(async () => {
+          pollCount++;
+          addDebugInfo(`Status poll #${pollCount}...`);
+          
           const statusResult = await refetchStatus();
+          addDebugInfo(`Status result: ${JSON.stringify(statusResult.data)}`);
+          
           if (statusResult.data?.isSetup) {
+            addDebugInfo("✓ Setup confirmed complete! Redirecting...");
+            clearInterval(pollInterval);
+            window.location.href = "/";
+          } else if (pollCount >= 15) {
+            addDebugInfo("⚠ Polling timeout - redirecting anyway");
             clearInterval(pollInterval);
             window.location.href = "/";
           }
         }, 1000); // Poll every second
         
-        // Fallback redirect after 10 seconds
+        // Fallback redirect after 20 seconds
         setTimeout(() => {
+          addDebugInfo("⚠ Fallback redirect triggered");
           clearInterval(pollInterval);
           window.location.href = "/";
-        }, 10000);
+        }, 20000);
       }
     },
     onError: (error: any) => {

@@ -368,6 +368,8 @@ export default async function handler(req, res) {
         admin_user_id = ${adminUserId},
         updated_at = CURRENT_TIMESTAMP
     `;
+    
+    console.log('Setup status marked as complete in database');
 
     const configData = {
       siteName: 'Webtoon Platform',
