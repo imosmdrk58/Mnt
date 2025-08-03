@@ -26,6 +26,8 @@ export class InstallManager {
       return { valid: false, error: "Database URL is required" };
     }
 
+    let testPool: NeonPool | PgPool | null = null;
+
     try {
       // Validate URL format first
       const url = new URL(databaseUrl);
@@ -34,42 +36,32 @@ export class InstallManager {
       }
 
       const isNeon = this.isNeonUrl(databaseUrl);
+      console.log(`Testing database connection (${isNeon ? 'Neon' : 'Standard PostgreSQL'}):`, databaseUrl.replace(/:\/\/[^@]+@/, '://***:***@'));
       
       if (isNeon) {
         // Use Neon serverless for Neon databases
-        const testPool = new NeonPool({ 
+        testPool = new NeonPool({ 
           connectionString: databaseUrl,
-          connectionTimeoutMillis: 10000,
+          connectionTimeoutMillis: 15000,
           idleTimeoutMillis: 5000,
         });
         
-        const testDb = drizzleNeon({ client: testPool, schema });
-        
-        const queryPromise = testDb.execute(sql`SELECT 1 as test`);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 15000)
-        );
-        
-        await Promise.race([queryPromise, timeoutPromise]);
-        await testPool.end();
+        const testDb = drizzleNeon({ client: testPool as NeonPool, schema });
+        await testDb.execute(sql`SELECT 1 as test`);
       } else {
         // Use regular pg Pool for other PostgreSQL providers (Supabase, etc.)
-        const testPool = new PgPool({ 
+        testPool = new PgPool({ 
           connectionString: databaseUrl,
-          connectionTimeoutMillis: 10000,
+          connectionTimeoutMillis: 15000,
           idleTimeoutMillis: 5000,
-          max: 1, // Limit connections for testing
+          max: 1,
+          ssl: { rejectUnauthorized: false }, // Allow SSL connections for cloud databases
         });
         
-        const testDb = drizzlePg(testPool, { schema });
-        
-        const queryPromise = testDb.execute(sql`SELECT 1 as test`);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 15000)
-        );
-        
-        await Promise.race([queryPromise, timeoutPromise]);
-        await testPool.end();
+        // Test connection with a simple query using the pool directly
+        const client = await testPool.connect();
+        await client.query('SELECT 1 as test');
+        client.release();
       }
       
       console.log("Database connection validated successfully");
@@ -79,22 +71,37 @@ export class InstallManager {
       
       // Provide more specific error messages
       if (error instanceof Error) {
-        if (error.message.includes('ENOTFOUND')) {
-          return { valid: false, error: "Database hostname not found. Please verify the hostname in your connection string." };
-        } else if (error.message.includes('ECONNREFUSED')) {
+        const errorMessage = error.message.toLowerCase();
+        
+        if (errorMessage.includes('enotfound') || errorMessage.includes('getaddrinfo')) {
+          return { valid: false, error: "Database hostname could not be resolved. Please verify the hostname in your connection string and check your internet connection." };
+        } else if (errorMessage.includes('econnrefused')) {
           return { valid: false, error: "Connection refused. The database server may be down or the port may be incorrect." };
-        } else if (error.message.includes('timeout')) {
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('etimedout')) {
           return { valid: false, error: "Connection timeout. Please check your network connectivity and database availability." };
-        } else if (error.message.includes('authentication') || error.message.includes('password')) {
+        } else if (errorMessage.includes('authentication') || errorMessage.includes('password') || errorMessage.includes('login')) {
           return { valid: false, error: "Authentication failed. Please check your username and password." };
-        } else if (error.message.includes('ECONNRESET')) {
+        } else if (errorMessage.includes('econnreset')) {
           return { valid: false, error: "Connection reset. The database may be overloaded or have connection limits." };
-        } else if (error.message.includes('Invalid URL')) {
+        } else if (errorMessage.includes('invalid') && errorMessage.includes('url')) {
           return { valid: false, error: "Invalid database URL format. Please check your connection string." };
+        } else if (errorMessage.includes('no pg_hba.conf entry')) {
+          return { valid: false, error: "Database access denied. Please check your database access configuration." };
+        } else if (errorMessage.includes('does not exist')) {
+          return { valid: false, error: "Database does not exist. Please verify the database name in your connection string." };
         }
       }
       
       return { valid: false, error: `Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
+    } finally {
+      // Always clean up the test connection
+      if (testPool) {
+        try {
+          await testPool.end();
+        } catch (cleanupError) {
+          console.warn("Failed to cleanup test connection:", cleanupError);
+        }
+      }
     }
   }
 
