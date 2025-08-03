@@ -21,6 +21,10 @@ export class InstallManager {
     return databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.dev');
   }
 
+  private isSupabaseUrl(databaseUrl: string): boolean {
+    return databaseUrl.includes('supabase.co');
+  }
+
   async validateDatabaseConnection(databaseUrl: string): Promise<{ valid: boolean; error?: string }> {
     if (!databaseUrl || databaseUrl.trim() === '') {
       return { valid: false, error: "Database URL is required" };
@@ -74,6 +78,10 @@ export class InstallManager {
         const errorMessage = error.message.toLowerCase();
         
         if (errorMessage.includes('enotfound') || errorMessage.includes('getaddrinfo')) {
+          // Check if this is a Supabase connection issue
+          if (this.isSupabaseUrl(databaseUrl)) {
+            return { valid: false, error: "Cannot reach Supabase database from this environment. This may be due to network restrictions in the server environment. The database URL appears valid, but the hostname cannot be resolved from this server. You may need to use a different database provider or check if your Supabase project allows connections from this IP range." };
+          }
           return { valid: false, error: "Database hostname could not be resolved. Please verify the hostname in your connection string and check your internet connection." };
         } else if (errorMessage.includes('econnrefused')) {
           return { valid: false, error: "Connection refused. The database server may be down or the port may be incorrect." };
