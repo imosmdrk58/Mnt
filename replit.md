@@ -61,7 +61,17 @@ PostgreSQL is used with entities including:
 
 ## Recent Changes
 
-**CRITICAL Vercel Deployment Fixes (COMPLETE - August 3, 2025)**
+**CRITICAL Installation Loop and Database Table Fixes (COMPLETE - August 3, 2025)**
+- ✓ Fixed Installation Loop Issue: Setup status now correctly updates to "installed" after successful installation
+- ✓ Fixed Database Table Creation: All 18 tables (series, chapters, groups, comments, etc.) now get created during installation instead of just 2
+- ✓ Enhanced Vercel API Function: Complete table creation in serverless environment without Drizzle CLI dependency
+- ✓ Improved Cache Management: Reduced setup status cache duration from 30s to 5s for more responsive status checks
+- ✓ Enhanced Frontend Polling: Aggressive status polling after installation completion to detect setup completion faster
+- ✓ Complete Database Schema: All enums (series_type, series_status, chapter_status) and foreign key relationships properly created
+- ✓ Proper Admin User Creation: Admin user with creator privileges properly inserted during installation
+- ✓ Robust Error Handling: Better error messages and fallback handling for both local and Vercel environments
+
+**Previous Vercel Deployment Fixes (COMPLETE - August 3, 2025)**
 - ✓ Fixed Vercel Runtime Error: Updated vercel.json to use @vercel/node instead of deprecated nodejs18.x runtime
 - ✓ Fixed Raw Code Display: Corrected Vercel configuration to serve from dist/public for static files
 - ✓ Fixed Setup API 404/500 Error: Created Vercel serverless functions with ES modules and dynamic imports
