@@ -91,47 +91,203 @@ VITE_STRIPE_PUBLIC_KEY=your_stripe_public_key (if configured)
 
 ### Deploy to Vercel
 
-1. **Prepare for deployment:**
+#### Prerequisites
+- Vercel account (free tier available)
+- Git repository with your project
+- Database setup completed (Neon, Supabase, etc.)
+
+#### Step 1: Prepare Your Project
+
+1. **Ensure your project is in a Git repository:**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   ```
+
+2. **Push to GitHub/GitLab/Bitbucket:**
+   ```bash
+   # For GitHub:
+   git remote add origin https://github.com/yourusername/your-repo.git
+   git push -u origin main
+   ```
+
+3. **Build locally to test:**
    ```bash
    npm run build
    ```
+   Make sure this completes without errors.
 
-2. **Install Vercel CLI:**
+#### Step 2: Deploy to Vercel
+
+**Option A: Deploy via Vercel Dashboard (Recommended)**
+
+1. **Go to [Vercel Dashboard](https://vercel.com/dashboard)**
+2. **Click "Add New Project"**
+3. **Import your Git repository:**
+   - Connect your GitHub/GitLab/Bitbucket account
+   - Select your repository
+   - Click "Import"
+
+4. **Configure project settings:**
+   - **Framework Preset:** Select "Other" or "Vite"
+   - **Root Directory:** `.` (leave as default)
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+   - **Install Command:** `npm install`
+
+5. **Click "Deploy"** - This first deployment will likely fail due to missing environment variables
+
+**Option B: Deploy with Vercel CLI**
+
+1. **Install Vercel CLI:**
    ```bash
    npm i -g vercel
    ```
 
-3. **Deploy:**
+2. **Login to Vercel:**
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy from your project directory:**
    ```bash
    vercel
    ```
+   - Follow the prompts to link your project
+   - Choose "yes" to link to existing project or create new one
 
-4. **Configure environment variables in Vercel dashboard:**
-   - `DATABASE_URL`
-   - `SESSION_SECRET`
-   - `STRIPE_SECRET_KEY` (if using Stripe)
-   - `VITE_STRIPE_PUBLIC_KEY` (if using Stripe)
+#### Step 3: Configure Environment Variables
 
-5. **Vercel configuration** (`vercel.json`):
-   ```json
-   {
-     "functions": {
-       "server/index.ts": {
-         "runtime": "nodejs18.x"
-       }
-     },
-     "routes": [
-       {
-         "src": "/api/(.*)",
-         "dest": "/server/index.ts"
-       },
-       {
-         "src": "/(.*)",
-         "dest": "/dist/$1"
-       }
-     ]
-   }
-   ```
+1. **In Vercel Dashboard, go to your project**
+2. **Navigate to Settings → Environment Variables**
+3. **Add the following variables:**
+
+   **Required Variables:**
+   - **Name:** `DATABASE_URL`
+     - **Value:** Your PostgreSQL connection string
+     - **Environment:** Production, Preview, Development
+   
+   - **Name:** `SESSION_SECRET`
+     - **Value:** A secure random string (generate with: `openssl rand -base64 32`)
+     - **Environment:** Production, Preview, Development
+
+   **Optional Variables (if using Stripe):**
+   - **Name:** `STRIPE_SECRET_KEY`
+     - **Value:** Your Stripe secret key (starts with `sk_`)
+     - **Environment:** Production, Preview, Development
+   
+   - **Name:** `VITE_STRIPE_PUBLIC_KEY`
+     - **Value:** Your Stripe publishable key (starts with `pk_`)
+     - **Environment:** Production, Preview, Development
+
+4. **Click "Save" for each variable**
+
+#### Step 4: Configure Vercel Project Settings
+
+The `vercel.json` file has been automatically created in your project root with the correct configuration:
+
+```json
+{
+  "version": 2,
+  "functions": {
+    "server/index.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+```
+
+This configuration:
+- Routes API calls (`/api/*`) to your Express server
+- Serves static files from the `dist` directory
+- Uses Node.js 18.x runtime for serverless functions
+
+#### Step 5: Redeploy with Environment Variables
+
+1. **Trigger a new deployment:**
+   - **Via Dashboard:** Go to Deployments tab → Click "Redeploy" on latest deployment
+   - **Via CLI:** Run `vercel --prod` in your project directory
+   - **Via Git:** Push any change to your repository
+
+2. **Monitor the deployment:**
+   - Watch the build logs in Vercel dashboard
+   - Check for any build errors or warnings
+
+#### Step 6: Post-Deployment Setup
+
+1. **Access your deployed application:**
+   - Your app will be available at `https://your-project-name.vercel.app`
+   - Vercel provides the URL in the deployment success message
+
+2. **Complete the setup process:**
+   - Navigate to `https://your-project-name.vercel.app/setup`
+   - Enter your database connection string
+   - Create your admin account
+   - Configure site settings
+
+3. **Test key functionality:**
+   - User registration and login
+   - Content creation and viewing
+   - File uploads (if applicable)
+   - Database operations
+
+#### Step 7: Custom Domain (Optional)
+
+1. **In Vercel Dashboard → Settings → Domains**
+2. **Add your custom domain**
+3. **Configure DNS records as instructed by Vercel**
+4. **SSL certificates are automatically provisioned**
+
+#### Troubleshooting Vercel Deployment
+
+**Build Failures:**
+- Check build logs in Vercel dashboard
+- Ensure all dependencies are in `package.json`
+- Verify TypeScript compilation passes locally
+
+**Database Connection Issues:**
+- Verify `DATABASE_URL` is correctly set
+- Ensure your database allows connections from Vercel IPs
+- For Neon: Enable "Allow connections from any IP"
+
+**Function Timeout:**
+- Serverless functions have execution limits (10s on free plan)
+- Consider upgrading to Pro plan for longer timeouts
+- Optimize database queries for faster response times
+
+**Environment Variable Issues:**
+- Variables must be set for all environments (Production, Preview, Development)
+- VITE_ prefixed variables are exposed to the frontend
+- Redeploy after adding new environment variables
+
+**Static File Issues:**
+- Ensure `npm run build` creates files in `dist` directory
+- Check that `vercel.json` routes are correctly configured
+- Verify static assets are properly referenced in your code
+
+**Environment Variable Issues:**
+- Variables must be set for all environments (Production, Preview, Development)
+- VITE_ prefixed variables are exposed to the frontend
+- Redeploy after adding new environment variables
+
+**Static File Issues:**
+- Ensure `npm run build` creates files in `dist` directory
+- Check that `vercel.json` routes are correctly configured
+- Verify static assets are properly referenced in your code
 
 ### Deploy to Netlify
 
