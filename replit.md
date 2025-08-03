@@ -58,3 +58,15 @@ PostgreSQL is used with entities including:
 - **Radix UI**: Accessible component primitives
 - **Lucide React**: Icon library
 - **Tailwind CSS**: Utility-first CSS framework
+
+## Recent Changes
+
+**CRITICAL Vercel Deployment Fixes (COMPLETE - August 3, 2025)**
+- ✓ Fixed Vercel Runtime Error: Updated vercel.json to use @vercel/node instead of deprecated nodejs18.x runtime
+- ✓ Fixed Raw Code Display: Corrected Vercel configuration to serve from dist/public for static files
+- ✓ Fixed Setup API 404 Error: Created Vercel-specific API files in /api/setup/ directory for serverless functions
+- ✓ Added Individual API Endpoints: status.js, install.js, validate-db.js, test-current-db.js for Vercel compatibility
+- ✓ Fixed Favicon 404: Added proper favicon.svg file and routing configuration
+- ✓ Updated Vercel Routes: Specific routing for setup API endpoints and static assets
+- ✓ Added Client-Side Setup Guard: Automatic redirect to /setup when setup is incomplete
+- ✓ Enhanced Troubleshooting: Updated setup.md with comprehensive Vercel-specific troubleshooting steps

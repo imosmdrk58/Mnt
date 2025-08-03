@@ -9,14 +9,34 @@
       }
     },
     {
-      "src": "dist/index.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/index.js"
+      "src": "/favicon\\.ico",
+      "dest": "/dist/public/favicon.svg"
+    },
+    {
+      "src": "/favicon\\.svg",
+      "dest": "/dist/public/favicon.svg"
+    },
+    {
+      "src": "/api/setup/status",
+      "dest": "/api/setup/status.js"
+    },
+    {
+      "src": "/api/setup/install",
+      "dest": "/api/setup/install.js"
+    },
+    {
+      "src": "/api/setup/validate-db",
+      "dest": "/api/setup/validate-db.js"
+    },
+    {
+      "src": "/api/setup/test-current-db",
+      "dest": "/api/setup/test-current-db.js"
     },
     {
       "src": "/(.*)",

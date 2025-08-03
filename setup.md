@@ -282,10 +282,17 @@ If the main pages work but `/setup` is not accessible on your Vercel deployment:
 
 **Setup API Returns 404 on Vercel:**
 If you see "404" errors for `/api/setup/status` on your deployed site:
+- **CRITICAL FIX**: The latest code now includes Vercel-specific API files in `/api/setup/` directory
+- Push the latest code changes that include the new `/api/setup/*.js` files
+- Redeploy your project on Vercel after pushing
 - Ensure your environment variables are set in Vercel (even if empty values)
-- The latest code fixes the API routing issues for serverless functions
-- Redeploy your project after pushing the latest code changes
-- Check Vercel function logs if the API still doesn't work
+- The new structure uses individual serverless functions for each API endpoint
+- Check Vercel function logs in the dashboard if issues persist
+
+**Favicon 404 Errors:**
+If you see favicon.ico 404 errors:
+- The latest code includes a proper favicon.svg file
+- This error won't affect functionality but is now resolved
 
 **Runtime Version Error:**
 If you see "Function Runtimes must have a valid version", your `vercel.json` file needs to be updated:
