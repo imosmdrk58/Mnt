@@ -36,6 +36,8 @@ interface SetupStatus {
 export default function SetupPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [installationComplete, setInstallationComplete] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
   // Check setup status
   const { data: setupStatus, refetch: refetchStatus } = useQuery<SetupStatus>({
@@ -70,21 +72,44 @@ export default function SetupPage() {
     },
   });
 
+  // Add debug helper
+  const addDebugInfo = (info: string) => {
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${info}`]);
+  };
+
   // Installation mutation
   const installMutation = useMutation({
     mutationFn: async (data: SetupFormData) => {
+      addDebugInfo("Starting installation request...");
+      
+      const requestBody = {
+        databaseUrl: data.databaseUrl,
+        adminUsername: data.adminUsername,
+        adminPassword: data.adminPassword
+      };
+      
+      addDebugInfo(`Request body: ${JSON.stringify(requestBody, null, 2)}`);
+      
       const response = await fetch("/api/setup/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          databaseUrl: data.databaseUrl,
-          adminUsername: data.adminUsername,
-          adminPassword: data.adminPassword
-        }),
+        body: JSON.stringify(requestBody),
       });
-      return response.json();
+      
+      addDebugInfo(`Response status: ${response.status} ${response.statusText}`);
+      
+      const responseText = await response.text();
+      addDebugInfo(`Response text: ${responseText}`);
+      
+      try {
+        return JSON.parse(responseText);
+      } catch (e) {
+        addDebugInfo(`Failed to parse JSON: ${e}`);
+        throw new Error(`Invalid JSON response: ${responseText}`);
+      }
     },
     onSuccess: (result: any) => {
+      addDebugInfo(`Installation result: ${JSON.stringify(result)}`);
       if (result.success) {
         setInstallationComplete(true);
         
@@ -103,6 +128,10 @@ export default function SetupPage() {
           window.location.href = "/";
         }, 10000);
       }
+    },
+    onError: (error: any) => {
+      addDebugInfo(`Installation error: ${error.message}`);
+      console.error("Installation failed:", error);
     },
   });
 
@@ -575,6 +604,85 @@ export default function SetupPage() {
                       "Install Now"
                     )}
                   </Button>
+                </div>
+
+                {/* Debug Panel */}
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowDebug(!showDebug)}
+                    className="w-full mb-2"
+                  >
+                    {showDebug ? "Hide" : "Show"} Debug Info
+                  </Button>
+                  
+                  {showDebug && (
+                    <div className="space-y-2">
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={async () => {
+                            addDebugInfo("Testing simple install endpoint...");
+                            try {
+                              const response = await fetch("/api/setup/simple-install", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  databaseUrl: form.getValues("databaseUrl"),
+                                  adminUsername: form.getValues("adminUsername"),
+                                  adminPassword: form.getValues("adminPassword")
+                                }),
+                              });
+                              const text = await response.text();
+                              addDebugInfo(`Simple install response: ${response.status} - ${text}`);
+                            } catch (e) {
+                              addDebugInfo(`Simple install error: ${e}`);
+                            }
+                          }}
+                        >
+                          Test Simple Install
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={async () => {
+                            addDebugInfo("Testing basic test endpoint...");
+                            try {
+                              const response = await fetch("/api/setup/test-install", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  databaseUrl: form.getValues("databaseUrl"),
+                                  adminUsername: form.getValues("adminUsername"),
+                                  adminPassword: form.getValues("adminPassword")
+                                }),
+                              });
+                              const text = await response.text();
+                              addDebugInfo(`Test install response: ${response.status} - ${text}`);
+                            } catch (e) {
+                              addDebugInfo(`Test install error: ${e}`);
+                            }
+                          }}
+                        >
+                          Test Basic Install
+                        </Button>
+                      </div>
+                      
+                      {debugInfo.length > 0 && (
+                        <div className="bg-muted p-3 rounded text-xs max-h-40 overflow-y-auto">
+                          <div className="font-mono space-y-1">
+                            {debugInfo.map((info, index) => (
+                              <div key={index} className="text-muted-foreground">
+                                {info}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

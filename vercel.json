@@ -43,6 +43,10 @@
       "dest": "/api/setup/test-install.js"
     },
     {
+      "src": "/api/setup/simple-install",
+      "dest": "/api/setup/simple-install.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/dist/public/$1"
     }
