@@ -76,7 +76,11 @@ export default function SetupPage() {
       const response = await fetch("/api/setup/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          databaseUrl: data.databaseUrl,
+          adminUsername: data.adminUsername,
+          adminPassword: data.adminPassword
+        }),
       });
       return response.json();
     },

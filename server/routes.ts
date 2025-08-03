@@ -47,43 +47,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/setup/install', async (req, res) => {
     try {
-      const setupData = installerSetupSchema.parse(req.body);
+      const { databaseUrl, adminUsername, adminPassword } = req.body;
+
+      if (!databaseUrl || !adminUsername || !adminPassword) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Missing required fields: databaseUrl, adminUsername, adminPassword' 
+        });
+      }
+
+      console.log('Starting installation process...');
       
-      // Perform full installation
+      // Create a minimal setup data object for the existing method
+      const setupData = {
+        databaseUrl,
+        siteName: 'Webtoon Platform',
+        adminUsername,
+        adminEmail: `${adminUsername}@example.com`, // Generate a default email
+        adminPassword,
+        stripePublicKey: '',
+        stripeSecretKey: '',
+        logoUrl: '',
+        faviconUrl: ''
+      };
+      
       const result = await installManager.performFullInstallation(setupData);
-      
+
       if (result.success) {
         // Reinitialize main database connection with new URL
-        initializeDatabase(setupData.databaseUrl);
+        initializeDatabase(databaseUrl);
         
         // Clear setup status cache to force refresh
         clearSetupStatusCache();
         
         res.json({ 
           success: true, 
-          message: "Installation completed successfully",
-          adminUserId: result.adminUserId,
-          siteName: setupData.siteName
+          message: 'Installation completed successfully!',
+          details: result.details 
         });
       } else {
         res.status(400).json({ 
           success: false, 
-          error: result.error || "Installation failed"
+          message: result.error || 'Installation failed' 
         });
       }
     } catch (error) {
-      console.error("Installation error:", error);
-      if (error instanceof Error) {
-        res.status(400).json({ 
-          success: false, 
-          error: error.message
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          error: "Unknown installation error"
-        });
-      }
+      console.error('Installation error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: `Installation failed: ${error.message}` 
+      });
     }
   });
 

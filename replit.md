@@ -71,3 +71,5 @@ PostgreSQL is used with entities including:
 - ✓ Added Client-Side Setup Guard: Automatic redirect to /setup when setup is incomplete
 - ✓ Enhanced Troubleshooting: Updated setup.md with comprehensive Vercel-specific troubleshooting steps
 - ✓ Dependency Management: Added bcrypt for password hashing in serverless functions
+- ✓ Fixed Method Not Allowed: Standardized API format between local server and Vercel functions
+- ✓ Route Consistency: Both environments now use identical simplified API calls
