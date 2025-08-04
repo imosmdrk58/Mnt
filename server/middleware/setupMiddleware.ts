@@ -8,23 +8,28 @@ export interface SetupStatus {
   config?: any;
 }
 
+// Serverless-compatible cache (very short-lived to avoid stale data)
 let cachedSetupStatus: SetupStatus | null = null;
 let lastStatusCheck = 0;
-const STATUS_CACHE_DURATION = 5000; // 5 seconds for more responsive setup status checks
+const STATUS_CACHE_DURATION = 1000; // 1 second only for serverless compatibility
 
 export async function checkSetupStatus(): Promise<SetupStatus> {
   const now = Date.now();
   
-  // Return cached status if still valid
+  // Very short cache for serverless environments
   if (cachedSetupStatus && (now - lastStatusCheck) < STATUS_CACHE_DURATION) {
     return cachedSetupStatus;
   }
 
-  // If database is not initialized, setup is not complete
+  // If database is not initialized, try to initialize it first
   if (!db) {
-    cachedSetupStatus = { isSetup: false };
-    lastStatusCheck = now;
-    return cachedSetupStatus;
+    const { initializeDatabase } = await import('../db');
+    const initialized = initializeDatabase();
+    if (!initialized) {
+      cachedSetupStatus = { isSetup: false };
+      lastStatusCheck = now;
+      return cachedSetupStatus;
+    }
   }
 
   try {
@@ -36,6 +41,7 @@ export async function checkSetupStatus(): Promise<SetupStatus> {
     };
     
     lastStatusCheck = now;
+    console.log("Setup status check result:", cachedSetupStatus);
     return cachedSetupStatus;
   } catch (error) {
     console.error("Failed to check setup status:", error);
@@ -48,6 +54,7 @@ export async function checkSetupStatus(): Promise<SetupStatus> {
 export function clearSetupStatusCache(): void {
   cachedSetupStatus = null;
   lastStatusCheck = 0;
+  console.log("Setup status cache cleared");
 }
 
 export async function setupMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {

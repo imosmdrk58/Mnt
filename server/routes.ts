@@ -37,6 +37,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup/Installation API routes (must be before auth middleware)
   app.get('/api/setup/status', async (req, res) => {
     try {
+      // Ensure database is initialized for serverless environments
+      if (!db) {
+        const { initializeDatabase } = await import('./db');
+        initializeDatabase();
+      }
+      
       const setupStatus = await checkSetupStatus();
       res.json(setupStatus);
     } catch (error) {
@@ -74,16 +80,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await installManager.performFullInstallation(setupData);
 
       if (result.success) {
-        // Reinitialize main database connection with new URL
-        initializeDatabase(databaseUrl);
+        // For serverless environments, DATABASE_URL must be set as environment variable
+        // We can't set it programmatically and have it persist across function calls
+        console.log('Installation completed. DATABASE_URL should be set as environment variable for production.');
+        
+        // Try to reinitialize database connection with new URL for current session
+        try {
+          initializeDatabase(databaseUrl);
+        } catch (dbError) {
+          console.warn('Could not reinitialize database connection:', dbError);
+        }
         
         // Clear setup status cache to force refresh
         clearSetupStatusCache();
         
         res.json({ 
           success: true, 
-          message: 'Installation completed successfully!',
-          adminUserId: result.adminUserId 
+          message: 'Installation completed successfully! Please set DATABASE_URL environment variable for production.',
+          adminUserId: result.adminUserId,
+          databaseUrl: databaseUrl.replace(/:([^:@]*?)@/, ':***@') // Hide password in response
         });
       } else {
         res.status(400).json({ 

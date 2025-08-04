@@ -23,17 +23,37 @@ export function initializeDatabase(databaseUrl?: string) {
     return false;
   }
 
+  // Skip reinitialization if already connected to the same URL
+  if (db && pool && connectionUrl === process.env.DATABASE_URL) {
+    return true;
+  }
+
   try {
+    // Close existing connection if reinitializing
+    if (pool) {
+      pool.end().catch(err => console.warn("Error closing previous pool:", err));
+    }
+
     const isNeon = isNeonUrl(connectionUrl);
     
     if (isNeon) {
-      // Use Neon serverless for Neon databases
-      pool = new NeonPool({ connectionString: connectionUrl });
+      // Use Neon serverless for Neon databases  
+      pool = new NeonPool({ 
+        connectionString: connectionUrl,
+        connectionTimeoutMillis: 15000,
+        idleTimeoutMillis: 5000,
+      });
       db = drizzleNeon({ client: pool as NeonPool, schema });
       console.log("Database initialized with Neon serverless driver");
     } else {
       // Use regular pg Pool for other PostgreSQL providers (Supabase, etc.)
-      pool = new PgPool({ connectionString: connectionUrl });
+      pool = new PgPool({ 
+        connectionString: connectionUrl,
+        connectionTimeoutMillis: 15000,
+        idleTimeoutMillis: 5000,
+        max: 1, // Single connection for serverless
+        ssl: { rejectUnauthorized: false },
+      });
       db = drizzlePg(pool as PgPool, { schema });
       console.log("Database initialized with standard PostgreSQL driver");
     }

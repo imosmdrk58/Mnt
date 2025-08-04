@@ -303,9 +303,10 @@ export class InstallManager {
         return { success: false, error: "Failed to complete setup configuration" };
       }
 
-      // Step 6: Set environment variable (in-memory for this session)
-      process.env.DATABASE_URL = setupData.databaseUrl;
-
+      // Note: In serverless environments, DATABASE_URL should be set as environment variable
+      // We don't set process.env.DATABASE_URL here as it won't persist across function calls
+      console.log("Installation completed successfully. Database URL should be set as environment variable.");
+      
       return { success: true, adminUserId };
     } catch (error) {
       console.error("Installation failed:", error);
