@@ -241,6 +241,7 @@ export class InstallManager {
         hasStripe: !!(setupData.stripePublicKey && setupData.stripeSecretKey),
         hasLogo: !!setupData.logoUrl,
       });
+      
       return true;
     } catch (error) {
       console.error("Failed to complete setup:", error);
