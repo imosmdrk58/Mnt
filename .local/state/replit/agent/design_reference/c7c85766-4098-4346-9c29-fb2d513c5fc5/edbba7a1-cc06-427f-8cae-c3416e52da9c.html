@@ -1,0 +1,906 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryVerse - Webtoon, Manga & Novel Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'primary': '#6366F1',
+                        'secondary': '#8B5CF6',
+                        'accent': '#EC4899',
+                        'success': '#10B981',
+                        'warning': '#F59E0B',
+                        'error': '#EF4444'
+                    },
+                    aspectRatio: {
+                        '3/4': '3 / 4',
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glassmorphism {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glassmorphism-dark {
+            backdrop-filter: blur(10px);
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 0.35s;
+        }
+        .hover-scale {
+            transition: transform 0.2s ease-in-out;
+        }
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+        body.dark {
+            background: #0F172A;
+            color: #F1F5F9;
+        }
+        .comic-bubble {
+            position: relative;
+        }
+        .comic-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid currentColor;
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+    <!-- Navigation Header -->
+    <nav class="sticky top-0 z-50 glassmorphism-dark backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- @COMPONENT: Logo [brand logo with gradient text] -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book-open text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                            StoryVerse
+                        </span>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: Logo -->
+
+                <!-- Search Bar -->
+                <!-- @COMPONENT: SearchBar [global search with autocomplete] -->
+                <div class="hidden md:flex flex-1 max-w-lg mx-8">
+                    <div class="relative w-full">
+                        <input type="text" 
+                               placeholder="Search series, creators, or genres..." 
+                               class="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                               data-bind="searchQuery"
+                               data-event="input:handleSearch">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: SearchBar -->
+
+                <!-- User Actions -->
+                <!-- @COMPONENT: UserActions [login/profile dropdown] -->
+                <div class="flex items-center space-x-4">
+                    <!-- Theme Toggle -->
+                    <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" 
+                            data-event="click:toggleTheme">
+                        <i class="fas fa-moon text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    
+                    <!-- Coins Balance -->
+                    <div class="hidden sm:flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900 px-3 py-1 rounded-full">
+                        <i class="fas fa-coins text-yellow-600"></i>
+                        <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200" data-bind="user.coinBalance">1,234</span>
+                    </div>
+                    
+                    <!-- User Avatar -->
+                    <div class="relative">
+                        <button class="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary p-0.5" 
+                                data-event="click:toggleUserMenu">
+                            <!-- A professional headshot of a young person smiling -->
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100" 
+                                 alt="User avatar" 
+                                 class="w-full h-full rounded-full object-cover"
+                                 data-bind="user.avatarUrl">
+                        </button>
+                        <!-- Elite Reader Badge -->
+                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full flex items-center justify-center">
+                            <i class="fas fa-crown text-white text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: UserActions -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation -->
+    <!-- @COMPONENT: MobileNav [bottom navigation for mobile] -->
+    <div class="fixed bottom-0 left-0 right-0 md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
+        <div class="flex justify-around items-center py-2">
+            <button class="flex flex-col items-center p-2 text-primary" data-event="click:navigateToHome">
+                <i class="fas fa-home text-lg"></i>
+                <span class="text-xs mt-1">Home</span>
+            </button>
+            <button class="flex flex-col items-center p-2 text-gray-500" data-event="click:navigateToLibrary">
+                <i class="fas fa-bookmark text-lg"></i>
+                <span class="text-xs mt-1">Library</span>
+            </button>
+            <button class="flex flex-col items-center p-2 text-gray-500" data-event="click:navigateToCreate">
+                <i class="fas fa-plus-circle text-lg"></i>
+                <span class="text-xs mt-1">Create</span>
+            </button>
+            <button class="flex flex-col items-center p-2 text-gray-500" data-event="click:navigateToProfile">
+                <i class="fas fa-user text-lg"></i>
+                <span class="text-xs mt-1">Profile</span>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MobileNav -->
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mb-20 md:mb-0">
+        
+        <!-- Hero Section -->
+        <!-- @COMPONENT: HeroSection [featured content carousel] -->
+        <section class="mb-8">
+            <div class="relative h-80 rounded-2xl overflow-hidden">
+                <!-- A dramatic anime-style landscape with floating islands and mystical lighting -->
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900" 
+                     style="background-image: url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=800'); background-size: cover; background-position: center;">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent"></div>
+                <div class="relative h-full flex items-center justify-start pl-8 md:pl-16">
+                    <div class="max-w-lg">
+                        <div class="comic-bubble bg-accent text-white px-4 py-2 rounded-lg inline-block mb-4">
+                            <span class="text-sm font-medium">Featured</span>
+                        </div>
+                        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4" data-bind="featuredSeries.title">
+                            Chronicles of the Shadow Realm
+                        </h1>
+                        <p class="text-gray-200 text-lg mb-6" data-bind="featuredSeries.description">
+                            A young warrior discovers ancient powers in a world where magic and technology collide.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <button class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors" 
+                                    data-event="click:startReading">
+                                <i class="fas fa-play mr-2"></i>Start Reading
+                            </button>
+                            <button class="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-medium transition-colors backdrop-blur-sm" 
+                                    data-event="click:addToLibrary">
+                                <i class="fas fa-bookmark mr-2"></i>Add to Library
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: HeroSection -->
+
+        <!-- Filter Tabs -->
+        <!-- @COMPONENT: FilterTabs [content type and genre filters] -->
+        <section class="mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Discover Content</h2>
+                <button class="text-primary hover:text-blue-600 font-medium" data-event="click:showAllFilters">
+                    View All Filters <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-3 mb-4">
+                <button class="px-4 py-2 bg-primary text-white rounded-xl font-medium" data-filter="all">All</button>
+                <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" data-filter="webtoon">Webtoons</button>
+                <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" data-filter="manga">Manga</button>
+                <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" data-filter="novel">Novels</button>
+                <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" data-filter="trending">Trending</button>
+                <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors" data-filter="completed">Completed</button>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: FilterTabs -->
+
+        <!-- Content Grid -->
+        <!-- @COMPONENT: ContentGrid [series cards with various layouts] -->
+        <section class="mb-12">
+            <!-- @MAP: series.map(item => ( -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                
+                <!-- Series Card 1 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="1">
+                    <div class="relative">
+                        <!-- A vibrant manga cover featuring a young protagonist with magical powers -->
+                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=533" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg"
+                             data-bind="series.coverImage">
+                        
+                        <!-- Progress Ring -->
+                        <div class="absolute top-2 right-2">
+                            <svg class="progress-ring w-8 h-8" viewBox="0 0 100 100">
+                                <circle class="progress-ring-circle stroke-white/30" stroke-width="8" fill="transparent" r="45" cx="50" cy="50"/>
+                                <circle class="progress-ring-circle stroke-primary" stroke-width="8" fill="transparent" r="45" cx="50" cy="50" style="stroke-dashoffset: 70;"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xs font-bold text-white">75%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Format Badge -->
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-accent text-white text-xs px-2 py-1 rounded-md font-medium">Webtoon</span>
+                        </div>
+                        
+                        <!-- Hover Overlay -->
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-play-circle text-white text-3xl mb-2"></i>
+                                <p class="text-white text-sm">Continue Reading</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors" data-bind="series.title">
+                            Mystic Academy
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" data-bind="series.author">by SakuraArt</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400" data-bind="series.rating">4.8</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400" data-bind="series.chapterCount">24 episodes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Series Card 2 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="2">
+                    <div class="relative">
+                        <!-- A dark fantasy manga cover with gothic architecture -->
+                        <img src="https://pixabay.com/get/g3568a54f27b888fba8bcc5663d78a91e5e823715d8bec970efe5a3b6b96011befe3ddab083742ef9e39df706cba7d86d9c33f4e25149833f722a6c3deee61da1_1280.jpg" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg">
+                        
+                        <!-- New Badge -->
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-success text-white text-xs px-2 py-1 rounded-md font-medium">New</span>
+                        </div>
+                        
+                        <!-- Format Badge -->
+                        <div class="absolute top-2 right-2">
+                            <span class="bg-secondary text-white text-xs px-2 py-1 rounded-md font-medium">Manga</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
+                            Dark Chronicles
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">by MangaMaster</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">4.6</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">12 chapters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Series Card 3 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="3">
+                    <div class="relative">
+                        <!-- A colorful fantasy landscape with floating cities -->
+                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=533" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg">
+                        
+                        <!-- Premium Badge -->
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-warning text-white text-xs px-2 py-1 rounded-md font-medium flex items-center">
+                                <i class="fas fa-crown mr-1"></i>Premium
+                            </span>
+                        </div>
+                        
+                        <div class="absolute top-2 right-2">
+                            <span class="bg-primary text-white text-xs px-2 py-1 rounded-md font-medium">Novel</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
+                            Ethereal Realms
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">by NovelWriter</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">4.9</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">156 chapters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Series Card 4 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="4">
+                    <div class="relative">
+                        <!-- A cyberpunk cityscape with neon lights -->
+                        <img src="https://pixabay.com/get/g7b33ec0c618b8228c5e39867766df55867ac54be99e7ad53d6f6f31e3899f1514dc2fcb83988cb1b5fcc751e0566196031e3ff1f58f5278a0e228cc8fca6828b_1280.jpg" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg">
+                        
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-accent text-white text-xs px-2 py-1 rounded-md font-medium">Webtoon</span>
+                        </div>
+                        
+                        <!-- Trending Badge -->
+                        <div class="absolute top-2 right-2">
+                            <span class="bg-error text-white text-xs px-2 py-1 rounded-md font-medium flex items-center">
+                                <i class="fas fa-fire mr-1"></i>Hot
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
+                            Cyber Legends
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">by TechArtist</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">4.7</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">89 episodes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Series Card 5 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="5">
+                    <div class="relative">
+                        <!-- A romantic slice-of-life scene in a Japanese garden -->
+                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=533" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg">
+                        
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-secondary text-white text-xs px-2 py-1 rounded-md font-medium">Manga</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
+                            Spring Blossoms
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">by RomanceArt</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">4.5</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">45 chapters</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Series Card 6 -->
+                <div class="group cursor-pointer hover-scale" data-event="click:viewSeries" data-series-id="6">
+                    <div class="relative">
+                        <!-- An action-packed battle scene with magical effects -->
+                        <img src="https://pixabay.com/get/gce1ec6deb3a28850e4210a950bb23360304c4b84efe5f1e66927fdbbc79435eabfd94cb83ed7229124ec72203d18ee80af58eb83f8606c4350694065a4941298_1280.jpg" 
+                             alt="Series cover" 
+                             class="w-full aspect-3/4 object-cover rounded-xl shadow-lg">
+                        
+                        <div class="absolute top-2 left-2">
+                            <span class="bg-primary text-white text-xs px-2 py-1 rounded-md font-medium">Novel</span>
+                        </div>
+                        
+                        <!-- Completed Badge -->
+                        <div class="absolute top-2 right-2">
+                            <span class="bg-success text-white text-xs px-2 py-1 rounded-md font-medium flex items-center">
+                                <i class="fas fa-check mr-1"></i>Complete
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
+                            Warrior's Path
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">by EpicWriter</p>
+                        <div class="flex items-center mt-2">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">4.8</span>
+                            </div>
+                            <span class="mx-2 text-gray-400">•</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">200 chapters</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- @END_MAP )) -->
+        </section>
+        <!-- @END_COMPONENT: ContentGrid -->
+
+        <!-- Creator Spotlight -->
+        <!-- @COMPONENT: CreatorSpotlight [featured creators and groups] -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Creator Spotlight</h2>
+                <button class="text-primary hover:text-blue-600 font-medium" data-event="click:viewAllCreators">
+                    View All Creators <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Creator Card 1 -->
+                <div class="glassmorphism rounded-2xl p-6 hover-scale cursor-pointer" data-event="click:viewCreator" data-creator-id="1">
+                    <div class="flex items-center mb-4">
+                        <!-- A professional artist working on digital art -->
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100" 
+                             alt="Creator avatar" 
+                             class="w-12 h-12 rounded-full object-cover mr-3"
+                             data-bind="creator.avatarUrl">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white" data-bind="creator.name">SakuraArt</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Webtoon Creator</p>
+                        </div>
+                        <div class="ml-auto">
+                            <span class="bg-accent text-white text-xs px-2 py-1 rounded-full flex items-center">
+                                <i class="fas fa-crown mr-1"></i>Elite
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-4" data-bind="creator.bio">
+                        Creating magical worlds and unforgettable characters. Specializing in fantasy webtoons with stunning visuals.
+                    </p>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-users text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400" data-bind="creator.followerCount">12.5K</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-book text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400" data-bind="creator.seriesCount">3 series</span>
+                            </div>
+                        </div>
+                        <button class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" 
+                                data-event="click:followCreator">
+                            Follow
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Creator Card 2 -->
+                <div class="glassmorphism rounded-2xl p-6 hover-scale cursor-pointer" data-event="click:viewCreator" data-creator-id="2">
+                    <div class="flex items-center mb-4">
+                        <!-- A young creative person drawing manga -->
+                        <img src="https://pixabay.com/get/g40adc92b9df2e20ec96385b308b32e80027a420993fea2f07bcc493513a8520729ec01a238e4eea2be1f556782a928a9652dea63620b42a202e4b6cb5f4258cd_1280.jpg" 
+                             alt="Creator avatar" 
+                             class="w-12 h-12 rounded-full object-cover mr-3">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">MangaMaster</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Manga Artist</p>
+                        </div>
+                        <div class="ml-auto">
+                            <span class="bg-success text-white text-xs px-2 py-1 rounded-full flex items-center">
+                                <i class="fas fa-fire mr-1"></i>Rising
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">
+                        Dark fantasy and psychological thriller manga. Known for intricate storylines and detailed artwork.
+                    </p>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-users text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400">8.2K</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-book text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400">2 series</span>
+                            </div>
+                        </div>
+                        <button class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" 
+                                data-event="click:followCreator">
+                            Follow
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Group Card -->
+                <div class="glassmorphism rounded-2xl p-6 hover-scale cursor-pointer" data-event="click:viewGroup" data-group-id="1">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Scanlation Squad</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Translation Group</p>
+                        </div>
+                        <div class="ml-auto">
+                            <span class="bg-warning text-white text-xs px-2 py-1 rounded-full flex items-center">
+                                <i class="fas fa-star mr-1"></i>Staff Pick
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">
+                        Bringing the best international manga to English readers with high-quality translations.
+                    </p>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-users text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400">25K</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-book text-gray-500"></i>
+                                <span class="text-gray-600 dark:text-gray-400">15 series</span>
+                            </div>
+                        </div>
+                        <button class="bg-secondary hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" 
+                                data-event="click:followGroup">
+                            Join Group
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        <!-- @END_COMPONENT: CreatorSpotlight -->
+
+        <!-- Quick Actions -->
+        <!-- @COMPONENT: QuickActions [floating action button for creators] -->
+        <div class="fixed bottom-24 md:bottom-8 right-4 z-30">
+            <div class="relative">
+                <!-- Main FAB -->
+                <button class="w-14 h-14 bg-gradient-to-r from-primary to-secondary rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform" 
+                        data-event="click:toggleQuickActions">
+                    <i class="fas fa-plus text-xl"></i>
+                </button>
+                
+                <!-- Action Menu (Hidden by default) -->
+                <div class="absolute bottom-16 right-0 space-y-2 opacity-0 pointer-events-none transition-all duration-300" data-component="quickActionMenu">
+                    <button class="w-12 h-12 bg-accent rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform" 
+                            data-event="click:createWebtoon" title="Create Webtoon">
+                        <i class="fas fa-scroll"></i>
+                    </button>
+                    <button class="w-12 h-12 bg-secondary rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform" 
+                            data-event="click:createManga" title="Create Manga">
+                        <i class="fas fa-book-open"></i>
+                    </button>
+                    <button class="w-12 h-12 bg-primary rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform" 
+                            data-event="click:createNovel" title="Write Novel">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: QuickActions -->
+
+    </main>
+
+    <!-- Reading Interface Modal (Hidden by default) -->
+    <!-- @COMPONENT: ReadingInterface [modal reader for webtoons/manga/novels] -->
+    <div id="readerModal" class="fixed inset-0 bg-black z-50 hidden" data-component="readerModal">
+        <!-- Reader Header -->
+        <div class="absolute top-0 left-0 right-0 z-10 bg-black/80 backdrop-blur-sm">
+            <div class="flex items-center justify-between p-4">
+                <button class="text-white hover:text-gray-300 transition-colors" data-event="click:closeReader">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </button>
+                <div class="text-center">
+                    <h3 class="text-white font-semibold" data-bind="currentSeries.title">Mystic Academy</h3>
+                    <p class="text-gray-300 text-sm" data-bind="currentChapter.title">Chapter 1: The Beginning</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="text-white hover:text-gray-300 transition-colors" data-event="click:toggleReaderSettings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="text-white hover:text-gray-300 transition-colors" data-event="click:toggleBookmark">
+                        <i class="fas fa-bookmark"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Webtoon Reader Content -->
+        <div id="webtoonReader" class="pt-16 h-full overflow-y-auto" data-reader-type="webtoon">
+            <div class="max-w-3xl mx-auto">
+                <!-- @MAP: chapterPages.map(page => ( -->
+                <!-- A vertical webtoon panel showing a character discovering magical powers -->
+                <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1200" 
+                     alt="Webtoon panel" 
+                     class="w-full h-auto block"
+                     data-bind="page.imageUrl">
+                <!-- A dramatic action scene in vertical webtoon format -->
+                <img src="https://pixabay.com/get/gfac58e02ba526a399df2dfb8d51d4b25dac636adb47c11a6aec30f77e4d54ffdda201b2cc995e51f6d596461bd269567ab4f4f1c6cbc66c6570d71f583333f31_1280.jpg" 
+                     alt="Webtoon panel" 
+                     class="w-full h-auto block">
+                <!-- @END_MAP )) -->
+            </div>
+        </div>
+
+        <!-- Reader Progress Bar -->
+        <div class="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-4">
+            <div class="flex items-center space-x-4">
+                <button class="text-white hover:text-gray-300" data-event="click:previousChapter">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex-1">
+                    <div class="relative">
+                        <div class="w-full bg-gray-600 rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 35%;" data-bind="readingProgress"></div>
+                        </div>
+                        <span class="absolute -top-6 left-0 text-white text-xs">Page 7 of 20</span>
+                    </div>
+                </div>
+                <button class="text-white hover:text-gray-300" data-event="click:nextChapter">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ReadingInterface -->
+
+    <!-- Creator Dashboard Preview (Hidden by default) -->
+    <!-- @COMPONENT: CreatorDashboard [analytics and content management] -->
+    <div id="creatorDashboard" class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            
+            <!-- Dashboard Header -->
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Creator Dashboard</h1>
+                    <p class="text-gray-600 dark:text-gray-400 mt-1">Manage your content and track performance</p>
+                </div>
+                <button class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-colors" 
+                        data-event="click:createNewSeries">
+                    <i class="fas fa-plus mr-2"></i>New Series
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                <div class="glassmorphism rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Views</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" data-bind="analytics.totalViews">1.2M</p>
+                        </div>
+                        <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-eye text-primary text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">+12.5%</span>
+                        <span class="text-gray-500 text-sm ml-2">from last month</span>
+                    </div>
+                </div>
+
+                <div class="glassmorphism rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Followers</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" data-bind="analytics.followers">12.5K</p>
+                        </div>
+                        <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-accent text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">+8.2%</span>
+                        <span class="text-gray-500 text-sm ml-2">from last month</span>
+                    </div>
+                </div>
+
+                <div class="glassmorphism rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Coins Earned</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" data-bind="analytics.coinsEarned">5,420</p>
+                        </div>
+                        <div class="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-coins text-warning text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">+15.3%</span>
+                        <span class="text-gray-500 text-sm ml-2">from last month</span>
+                    </div>
+                </div>
+
+                <div class="glassmorphism rounded-xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Series</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" data-bind="analytics.activeSeries">3</p>
+                        </div>
+                        <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-secondary text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-gray-500 text-sm">2 ongoing, 1 completed</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="glassmorphism rounded-xl p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                <div class="space-y-4">
+                    <!-- @MAP: recentActivity.map(activity => ( -->
+                    <div class="flex items-center space-x-4 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-comment text-primary"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-900 dark:text-white">New comment on <span class="font-medium">Mystic Academy - Chapter 24</span></p>
+                            <p class="text-xs text-gray-500">2 hours ago</p>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CreatorDashboard -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        (function() {
+            // Theme Toggle
+            function toggleTheme() {
+                document.body.classList.toggle('dark');
+                localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+            }
+
+            // Initialize theme from localStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.body.classList.add('dark');
+            }
+
+            // Quick Actions Toggle
+            let quickActionsOpen = false;
+            function toggleQuickActions() {
+                const menu = document.querySelector('[data-component="quickActionMenu"]');
+                quickActionsOpen = !quickActionsOpen;
+                
+                if (quickActionsOpen) {
+                    menu.classList.remove('opacity-0', 'pointer-events-none');
+                    menu.classList.add('opacity-100', 'pointer-events-auto');
+                } else {
+                    menu.classList.add('opacity-0', 'pointer-events-none');
+                    menu.classList.remove('opacity-100', 'pointer-events-auto');
+                }
+            }
+
+            // Reading Progress Simulation
+            function updateReadingProgress() {
+                const progressBars = document.querySelectorAll('[data-bind="readingProgress"]');
+                progressBars.forEach(bar => {
+                    const progress = Math.random() * 100;
+                    bar.style.width = progress + '%';
+                });
+            }
+
+            // Initialize reading progress
+            updateReadingProgress();
+            
+            // Simulate real-time updates every 30 seconds
+            setInterval(updateReadingProgress, 30000);
+
+            // Event delegation for dynamic interactions
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('[data-event]');
+                if (!target) return;
+
+                const eventAction = target.getAttribute('data-event').split(':')[1];
+                
+                switch(eventAction) {
+                    case 'toggleTheme':
+                        toggleTheme();
+                        break;
+                    case 'toggleQuickActions':
+                        toggleQuickActions();
+                        break;
+                    case 'closeReader':
+                        document.getElementById('readerModal').classList.add('hidden');
+                        break;
+                    case 'startReading':
+                        document.getElementById('readerModal').classList.remove('hidden');
+                        break;
+                    // Add more event handlers as needed
+                }
+            });
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Lazy loading simulation for images
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '50px'
+            };
+
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.classList.add('opacity-100');
+                        img.classList.remove('opacity-0');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all images for lazy loading
+            document.querySelectorAll('img').forEach(img => {
+                img.classList.add('transition-opacity', 'duration-300');
+                imageObserver.observe(img);
+            });
+
+        })();
+    </script>
+</body>
+</html>
