@@ -50,9 +50,9 @@ export default function SetupPage() {
     defaultValues: {
       databaseUrl: "",
       siteName: "MangaVerse",
-      adminUsername: "",
-      adminEmail: "",
-      adminPassword: "",
+      adminUsername: "ertu",
+      adminEmail: "ertu341242@gmail.com",
+      adminPassword: "ertu_3412",
       stripePublicKey: "",
       stripeSecretKey: "",
       logoUrl: "",
